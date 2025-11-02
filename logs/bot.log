@@ -1,0 +1,24 @@
+2025-11-02 00:30:24 | INFO | bot | Запускаю профіль k166gcdo через AdsPower…
+2025-11-02 00:30:24 | INFO | src.core.adspower.profile_manager | Starting profile k166gcdo (behavior=restart)
+2025-11-02 00:30:24 | WARNING | src.core.adspower.api_local | list_profiles failed: 404 Client Error: Not Found for url: http://127.0.0.1:50325/api/v1/browser/list
+2025-11-02 00:30:24 | INFO | src.core.adspower.api_local | start_profile response: {'code': -1, 'msg': 'Profile does not exist'}
+2025-11-02 00:30:24 | ERROR | src.core.adspower.profile_manager | Error while starting profile: Failed to start profile: {'code': -1, 'msg': 'Profile does not exist'}
+Traceback (most recent call last):
+  File "C:\Users\Darkness\PycharmProjects\APIbot\src\core\adspower\profile_manager.py", line 65, in start
+    raise RuntimeError(f"Failed to start profile: {resp}")
+RuntimeError: Failed to start profile: {'code': -1, 'msg': 'Profile does not exist'}
+2025-11-02 00:30:24 | INFO | src.core.adspower.profile_manager | Stopping profile k166gcdo
+2025-11-02 00:30:24 | INFO | src.core.adspower.api_local | stop_profile response: {'code': -1, 'msg': 'Profile does not exist'}
+2025-11-02 00:30:24 | INFO | bot | Сесію закрито. Профіль зупинено.
+2025-11-02 00:45:14 | INFO | bot | Запускаю профіль 209 через AdsPower…
+2025-11-02 00:45:14 | INFO | src.core.adspower.profile_manager | Starting profile 209 (behavior=restart)
+2025-11-02 00:45:14 | WARNING | src.core.adspower.api_local | list_profiles failed: 404 Client Error: Not Found for url: http://127.0.0.1:50325/api/v1/browser/list
+2025-11-02 00:45:25 | INFO | src.core.adspower.api_local | start_profile response: {'code': 0, 'msg': 'success', 'data': {'ws': {'puppeteer': 'ws://127.0.0.1:9762/devtools/browser/d79f8a17-6794-4761-8ae8-ce806071db1c', 'selenium': '127.0.0.1:9762'}, 'debug_port': '9762', 'webdriver': 'C:\\Users\\Darkness\\AppData\\Roaming\\adspower_global\\cwd_global\\chrome_139\\chromedriver.exe'}}
+2025-11-02 00:45:25 | ERROR | src.core.adspower.profile_manager | Error while starting profile: No debugger/http address returned when starting profile: {'code': 0, 'msg': 'success', 'data': {'ws': {'puppeteer': 'ws://127.0.0.1:9762/devtools/browser/d79f8a17-6794-4761-8ae8-ce806071db1c', 'selenium': '127.0.0.1:9762'}, 'debug_port': '9762', 'webdriver': 'C:\\Users\\Darkness\\AppData\\Roaming\\adspower_global\\cwd_global\\chrome_139\\chromedriver.exe'}}
+Traceback (most recent call last):
+  File "C:\Users\Darkness\PycharmProjects\APIbot\src\core\adspower\profile_manager.py", line 76, in start
+    raise RuntimeError(f"No debugger/http address returned when starting profile: {resp}")
+RuntimeError: No debugger/http address returned when starting profile: {'code': 0, 'msg': 'success', 'data': {'ws': {'puppeteer': 'ws://127.0.0.1:9762/devtools/browser/d79f8a17-6794-4761-8ae8-ce806071db1c', 'selenium': '127.0.0.1:9762'}, 'debug_port': '9762', 'webdriver': 'C:\\Users\\Darkness\\AppData\\Roaming\\adspower_global\\cwd_global\\chrome_139\\chromedriver.exe'}}
+2025-11-02 00:45:25 | INFO | src.core.adspower.profile_manager | Stopping profile 209
+2025-11-02 00:45:33 | INFO | src.core.adspower.api_local | stop_profile response: {'code': 0, 'msg': 'success'}
+2025-11-02 00:45:34 | INFO | bot | Сесію закрито. Профіль зупинено.

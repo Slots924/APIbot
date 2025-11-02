@@ -1,0 +1,61 @@
+# ---- BASIC SETTINGS ----
+app_name: "AdsPower FB Bot"
+version: "0.1.0"
+
+# Який профіль за замовчуванням запускати (може бути перезаписано аргументом CLI) Зараз №149
+profile_id: "k166gcdo"
+
+# Тестовий пост для першого запуску
+test_post_url: "https://www.facebook.com/..."
+
+# ---- ACTIONS SETTINGS ----
+actions:
+  like_posts: true
+  like_comments: true
+  write_comments: false   # якщо false — не пише коментарі
+
+# Кількість дій (на майбутнє для антиспаму)
+limits:
+  max_likes_per_session: 5
+  max_comments_per_session: 2
+  session_cooldown_minutes: 15   # перерва між сесіями
+
+# ---- HUMAN-LIKE BEHAVIOR ----
+human_behavior:
+  enabled: true
+  scroll_before_actions: true
+  random_mouse_movements: true
+  type_like_human: true     # друкування коментарів по символу
+  delays:                   # затримки в секундах
+    min_action_delay: 1.2
+    max_action_delay: 3.5
+    min_scroll_delay: 0.5
+    max_scroll_delay: 2.0
+
+# ---- ANTI-DETECT SETTINGS ----
+anti_detect:
+  rotate_user_agent: true
+  use_random_behavior_patterns: true
+  avoid_repetitive_actions: true
+  add_noise_movements: true       # хаотичні мікро рухи
+
+# ---- SELENIUM / ADSPower SETTINGS ----
+adspower:
+  local_api_port: 50325
+  use_cloud_api: false            # якщо true — потребує secrets.yaml
+
+selenium:
+  implicit_wait: 2
+  page_load_timeout: 20
+
+# ---- LOGGING ----
+logging:
+  level: "INFO"            # DEBUG | INFO | WARNING | ERROR
+  file: "logs/bot.log"
+  rotate_logs: true
+  keep_last_files: 5
+
+# ---- DIRECTORIES ----
+paths:
+  comments_file: "src/data/comments.txt"
+  accounts_file: "src/data/accounts.json"
