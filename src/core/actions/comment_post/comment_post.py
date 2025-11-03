@@ -1,4 +1,4 @@
-# src/core/actions/comment_post.py
+# src/core/actions/comment_post/comment_post.py
 
 import time
 import random

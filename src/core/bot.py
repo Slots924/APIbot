@@ -3,7 +3,7 @@
 - Старт/стоп профілю по serial_number (user_id)
 - Під’єднання до запущеного браузера AdsPower через debugger port
 - Вбудовані методи: like_post, comment_post
-- Підтримка екшенів із src/core/actions/{like_post, comment_post}.py
+- Підтримка екшенів із ``src/core/actions/<action>/<action>.py``
 """
 
 from __future__ import annotations
@@ -112,31 +112,33 @@ class Bot:
 
     def _load_actions(self) -> None:
         try:
-            from src.core.actions.like_post import like_post
+            from src.core.actions.like_post.like_post import like_post
             self._actions["like_post"] = like_post
         except Exception:
             pass
 
         try:
-            from src.core.actions.comment_post import comment_post
+            from src.core.actions.comment_post.comment_post import comment_post
             self._actions["comment_post"] = comment_post
         except Exception:
             pass
 
         try:
-            from src.core.actions.like_comments import like_comments as like_comments_action
+            from src.core.actions.like_comments.like_comments import (
+                like_comments as like_comments_action,
+            )
             self._actions["like_comments"] = like_comments_action
         except Exception:
             pass
 
         try:
-            from src.core.actions.open_new_tab import open_new_tab
+            from src.core.actions.open_new_tab.open_new_tab import open_new_tab
             self._actions["open_new_tab"] = open_new_tab
         except Exception:
             pass
 
         try:
-            from src.core.actions.close_tab import close_tab
+            from src.core.actions.close_tab.close_tab import close_tab
             self._actions["close_tab"] = close_tab
         except Exception:
             pass
