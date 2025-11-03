@@ -25,11 +25,14 @@ if __name__ == "__main__":
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(URL1)
         sleep(5)
+        bot.close_tab()
 
         bot.open_new_tab(URL2)
         sleep(5)
+        bot.close_tab()
 
         bot.open_new_tab(URL3)
         sleep(5)
+        bot.close_tab()
     finally:
         bot.stop()  # обов'язково зупиняємо навіть якщо є помилки
