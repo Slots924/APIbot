@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 import random
 import traceback
-from typing import Optional, Callable, Tuple
+from typing import Callable, Iterable, Optional, Tuple
 
 import requests
 from selenium import webdriver
@@ -174,6 +174,30 @@ class Bot:
             return bool(action(self.driver, text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в comment_post: {e}")
+            traceback.print_exc()
+            return False
+
+    def like_comments(
+        self,
+        comments: Optional[Iterable[str]] = None,
+        reaction: str = "like",
+    ) -> Optional[bool]:
+        """Запускає action, який повинен поставити реакцію на заданому переліку коментарів."""
+
+        if not self._started or not self.driver:
+            raise RuntimeError("Спочатку виклич start().")
+
+        # Забираємо action із кешу `_actions`, щоб не залежати від прямого імпорту у класі Bot.
+        action = self._actions.get("like_comments")
+        if not action:
+            print("[BOT] ⚠️ like_comments ще не реалізовано.")
+            return None
+
+        print("[BOT] ❤️ Ставлю реакції на коментарях.")
+        try:
+            return bool(action(self.driver, comments, reaction))
+        except Exception as e:
+            print(f"[BOT] ❗ Помилка в like_comments: {e}")
             traceback.print_exc()
             return False
 
