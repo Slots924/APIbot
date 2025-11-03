@@ -129,6 +129,12 @@ class Bot:
         except Exception:
             pass
 
+        try:
+            from src.core.actions.close_tab import close_tab
+            self._actions["close_tab"] = close_tab
+        except Exception:
+            pass
+
     # -------------------- ACTION CALLERS --------------------
 
     def like_post(self, url: str) -> Optional[bool]:
@@ -206,6 +212,25 @@ class Bot:
             return bool(action(self.driver, url, require_selector=require_selector))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в open_new_tab: {e}")
+            traceback.print_exc()
+            return False
+
+    def close_tab(self, quantity: int = 1) -> Optional[bool]:
+        """Виклик екшену закриття поточної або кількох вкладок."""
+
+        if not self._started or not self.driver:
+            raise RuntimeError("Спочатку виклич start().")
+
+        action = self._actions.get("close_tab")
+        if not action:
+            print("[BOT] ⚠️ close_tab ще не реалізовано.")
+            return None
+
+        print(f"[BOT] ❎ Закриваю вкладки у кількості: {quantity}.")
+        try:
+            return bool(action(self.driver, quantity))
+        except Exception as e:
+            print(f"[BOT] ❗ Помилка в close_tab: {e}")
             traceback.print_exc()
             return False
 
