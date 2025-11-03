@@ -4,18 +4,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 
 
-def like_post(driver, post_url: str) -> bool:
-    print(f"[ACTION like_post] 👉 Працюю з постом: {post_url}")
+def like_post(driver) -> bool:
+    print(f"[ACTION like_post] 👉 Ініціалізація like_post")
 
     # Функція більше не відповідає за відкриття посилання та стабілізацію DOM,
     # тому очікуємо, що потрібна вкладка вже завантажена перед викликом дії.
 
     # Легкий scroll вниз — щоб кнопка стала видимою
-    try:
-        driver.execute_script("window.scrollBy(0, 500);")
-    except:
-        pass
-    time.sleep(1.5)
+    # try:
+    #     driver.execute_script("window.scrollBy(0, 500);")
+    # except:
+    #     pass
+    # time.sleep(1.5)
 
     # ФУНКЦІЯ ПОШУКУ КНОПКИ LIKE
     def find_like_button():

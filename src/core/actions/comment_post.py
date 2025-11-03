@@ -120,7 +120,7 @@ def _is_comment_posted(driver, text: str) -> bool:
 
 # ----------------- MAIN ACTION -----------------
 
-def comment_post(driver, post_url: str, text: str) -> bool:
+def comment_post(driver, text: str) -> bool:
     """
     Повноцінно пише та відправляє коментар під постом Facebook.
     Повертає True/False.

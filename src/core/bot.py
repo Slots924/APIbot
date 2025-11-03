@@ -137,7 +137,7 @@ class Bot:
 
     # -------------------- ACTION CALLERS --------------------
 
-    def like_post(self, url: str) -> Optional[bool]:
+    def like_post(self) -> Optional[bool]:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
@@ -146,15 +146,15 @@ class Bot:
             print("[BOT] ⚠️ like_post ще не реалізовано.")
             return None
 
-        print(f"[BOT] 👍 Лайкаю пост: {url}")
+        print(f"[BOT] 👍 Лайкаю пост:")
         try:
-            return bool(action(self.driver, url))
+            return bool(action(self.driver))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_post: {e}")
             traceback.print_exc()
             return False
 
-    def comment_post(self, url: str, text: str) -> Optional[bool]:
+    def comment_post(self, text: str) -> Optional[bool]:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
@@ -163,15 +163,15 @@ class Bot:
             print("[BOT] ⚠️ comment_post ще не реалізовано.")
             return None
 
-        print(f"[BOT] 💬 Коментую пост: {url}")
+        print(f"[BOT] 💬 Коментую пост:")
         try:
-            return bool(action(self.driver, url, text))
+            return bool(action(self.driver, text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в comment_post: {e}")
             traceback.print_exc()
             return False
 
-    def like_comment(self, url: str) -> Optional[bool]:
+    def like_comment(self) -> Optional[bool]:
         """
         Заглушка — файл буде додано пізніше:
         src/core/actions/like_comment.py з функцією like_comment(driver, url)
@@ -184,9 +184,9 @@ class Bot:
             print("[BOT] ⚠️ like_comment ще не реалізовано (файл відсутній).")
             return None
 
-        print(f"[BOT] ❤️ Лайкаю коментар під постом: {url}")
+        print(f"[BOT] ❤️ Лайкаю коментар під постом:")
         try:
-            return bool(action(self.driver, url))
+            return bool(action(self.driver))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_comment: {e}")
             traceback.print_exc()
