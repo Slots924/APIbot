@@ -5,7 +5,7 @@ from typing import Iterable, List, Optional
 from selenium.webdriver.remote.webdriver import WebDriver
 
 # Імпортую функції де прописана основна логіка
-from .sort_comments_by_newest import sort_comments_by_newest
+from .like_comments_sort import sort_comments_by_newest
 
 
 # Визначаємо тип для масиву коментарів, щоб було зрозуміло які дані очікуємо.
