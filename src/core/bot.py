@@ -11,12 +11,13 @@ from __future__ import annotations
 import time
 import random
 import traceback
-from typing import Optional, Callable
+from typing import Optional, Callable, Tuple
 
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 
 
 class Bot:
@@ -122,6 +123,12 @@ class Bot:
         except Exception:
             pass
 
+        try:
+            from src.core.actions.open_new_tab import open_new_tab
+            self._actions["open_new_tab"] = open_new_tab
+        except Exception:
+            pass
+
     # -------------------- ACTION CALLERS --------------------
 
     def like_post(self, url: str) -> Optional[bool]:
@@ -176,6 +183,29 @@ class Bot:
             return bool(action(self.driver, url))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_comment: {e}")
+            traceback.print_exc()
+            return False
+
+    def open_new_tab(
+        self,
+        url: str,
+        require_selector: Optional[Tuple[By, str]] = None,
+    ) -> Optional[bool]:
+        """Виконати action відкриття нової вкладки з очікуванням стабілізації DOM."""
+
+        if not self._started or not self.driver:
+            raise RuntimeError("Спочатку виклич start().")
+
+        action = self._actions.get("open_new_tab")
+        if not action:
+            print("[BOT] ⚠️ open_new_tab ще не реалізовано.")
+            return None
+
+        print(f"[BOT] 🗂️ Відкриваю нову вкладку для: {url}")
+        try:
+            return bool(action(self.driver, url, require_selector=require_selector))
+        except Exception as e:
+            print(f"[BOT] ❗ Помилка в open_new_tab: {e}")
             traceback.print_exc()
             return False
 
