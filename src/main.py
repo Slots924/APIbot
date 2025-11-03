@@ -20,6 +20,13 @@ if __name__ == "__main__":
     URL3 =  "https://www.facebook.com/photo/?fbid=815878634634705&set=a.115800767975832"
 
     COMMENT = "Мальовниче місце, просто зачаровує своєю красою! І я б із задоволенням побував там, щоб відчути цю атмосферу наживо."
+    COMMENTS_TO_LIKE = [
+        "Tulips for the soul waves for the",
+        "So pretty",
+        "Awesome",
+        "ap online work karain ge?",
+        "for the",
+    ]
 
     bot = Bot(user_id=USER_ID)
 
@@ -27,7 +34,7 @@ if __name__ == "__main__":
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(POST_URL)
 
-        bot.like_comments(["com1"])
+        bot.like_comments(COMMENTS_TO_LIKE)
         sleep(10)
 
 
