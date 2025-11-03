@@ -7,31 +7,6 @@ from selenium.webdriver.common.keys import Keys
 
 # ----------------- HELPERS -----------------
 
-def _wait_dom_stable(driver, timeout=12):
-    """Чекає поки DOM перестане активно змінюватись (простий стабілізатор)."""
-    last_html = ""
-    same_count = 0
-    start = time.time()
-
-    while time.time() - start < timeout:
-        try:
-            html = driver.page_source
-        except Exception:
-            time.sleep(0.5)
-            continue
-
-        if html == last_html:
-            same_count += 1
-            if same_count >= 3:
-                return True
-        else:
-            same_count = 0
-            last_html = html
-
-        time.sleep(0.4)
-
-    return False
-
 
 def _focus_comment_box(driver):
     """Шукає і фокусує поле коментування, повертає WebElement або None."""
@@ -151,14 +126,9 @@ def comment_post(driver, post_url: str, text: str) -> bool:
     Повертає True/False.
     """
 
-    print(f"[ACTION comment_post] 👉 Відкриваю пост: {post_url}")
-
-    # Перехід на пост через JS (надійніше ніж driver.get)
-    driver.execute_script(f"window.location.href = '{post_url}';")
-    time.sleep(4)
-
-    print("[ACTION comment_post] ⏳ Чекаю стабілізацію DOM…")
-    _wait_dom_stable(driver)
+    # На цьому етапі вважаємо, що сторінка з постом уже відкрита зовнішньою логікою,
+    # тому зосереджуємося на пошуку поля та надсиланні коментаря.
+    print("[ACTION comment_post] 🚀 Починаю взаємодію з уже відкритим постом.")
 
     print("[ACTION comment_post] 🟦 Фокусую поле коментаря…")
     if not _focus_comment_box(driver):
