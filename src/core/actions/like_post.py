@@ -5,25 +5,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 
 def like_post(driver, post_url: str) -> bool:
-    print(f"[ACTION like_post] 👉 Відкриваю пост: {post_url}")
+    print(f"[ACTION like_post] 👉 Працюю з постом: {post_url}")
 
-    # Перехід на пост (як у quick_like)
-    driver.execute_script(f"window.location.href = '{post_url}';")
-    time.sleep(3)
-
-    # === DOM STABILIZATION ===
-    print("[ACTION like_post] 🧠 Стабілізую DOM...")
-    prev_html = ""
-    stable_count = 0
-    for _ in range(5):
-        time.sleep(2)
-        curr_html = driver.page_source
-        if curr_html == prev_html:
-            stable_count += 1
-            if stable_count >= 2:
-                break
-        prev_html = curr_html
-    print("[ACTION like_post] ✅ DOM стабілізовано.")
+    # Функція більше не відповідає за відкриття посилання та стабілізацію DOM,
+    # тому очікуємо, що потрібна вкладка вже завантажена перед викликом дії.
 
     # Легкий scroll вниз — щоб кнопка стала видимою
     try:
