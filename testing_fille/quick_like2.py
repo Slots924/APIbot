@@ -15,7 +15,7 @@ from selenium.webdriver.common.by import By
 ADSPOWER_API_HOST = "127.0.0.1"
 ADSPOWER_API_PORT = 50325
 SERIAL_NUMBER = "214"
-POST_URL = "https://www.facebook.com/photo/?fbid=816659947772407&set=pcb.816660034439065"
+POST_URL = "https://www.facebook.com/photo/?fbid=817298384343945&set=a.137234542350336"
 # --------------------------------
 
 API_BASE = f"http://{ADSPOWER_API_HOST}:{ADSPOWER_API_PORT}"

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     USER_ID = "214"
 
     # Пост для тесту
-    POST_URL = "https://www.facebook.com/share/p/1CwNcFNiuD/"
+    POST_URL = "https://www.facebook.com/photo/?fbid=817298384343945&set=a.137234542350336"
 
     # Тестовий коментар
     COMMENT_TEXT = (
