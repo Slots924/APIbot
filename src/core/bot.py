@@ -124,6 +124,13 @@ class Bot:
             pass
 
         try:
+            from src.core.actions.like_comments import like_comments as like_comments_action
+            self._actions["like_comment"] = like_comments_action
+            self._actions["like_comments"] = like_comments_action
+        except Exception:
+            pass
+
+        try:
             from src.core.actions.open_new_tab import open_new_tab
             self._actions["open_new_tab"] = open_new_tab
         except Exception:
@@ -172,10 +179,7 @@ class Bot:
             return False
 
     def like_comment(self) -> Optional[bool]:
-        """
-        Заглушка — файл буде додано пізніше:
-        src/core/actions/like_comment.py з функцією like_comment(driver, url)
-        """
+        """Викликає заглушку, яка імітує проставлення лайків під коментарями."""
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
