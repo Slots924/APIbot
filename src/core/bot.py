@@ -2,7 +2,7 @@
 Спрощений Bot для AdsPower + Selenium.
 - Старт/стоп профілю по serial_number (user_id)
 - Під’єднання до запущеного браузера AdsPower через debugger port
-- Вбудовані методи: like_post, comment_post, like_comment (заглушка)
+- Вбудовані методи: like_post, comment_post
 - Підтримка екшенів із src/core/actions/{like_post, comment_post}.py
 """
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 import random
 import traceback
-from typing import Optional, Callable, Tuple, Iterable
+from typing import Optional, Callable, Tuple
 
 import requests
 from selenium import webdriver
@@ -125,7 +125,6 @@ class Bot:
 
         try:
             from src.core.actions.like_comments import like_comments as like_comments_action
-            self._actions["like_comment"] = like_comments_action
             self._actions["like_comments"] = like_comments_action
         except Exception:
             pass
@@ -175,31 +174,6 @@ class Bot:
             return bool(action(self.driver, text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в comment_post: {e}")
-            traceback.print_exc()
-            return False
-
-    def like_comment(
-        self,
-        comments: Iterable[str] | None = None,
-        reaction: str = "like",
-    ) -> Optional[bool]:
-        """Передає масив коментарів у заглушку дії для проставлення реакцій."""
-
-        # Щоб уникнути неочікуваних помилок, переконуємось, що сесія вже стартована.
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
-
-        action = self._actions.get("like_comment")
-        if not action:
-            print("[BOT] ⚠️ like_comment ще не реалізовано (файл відсутній).")
-            return None
-
-        print(f"[BOT] ❤️ Ставлю реакцію '{reaction}' під коментарями:")
-        try:
-            # Викликаємо заглушку з масивом коментарів та типом реакції, які передав користувач.
-            return bool(action(comments, reaction))
-        except Exception as e:
-            print(f"[BOT] ❗ Помилка в like_comment: {e}")
             traceback.print_exc()
             return False
 
