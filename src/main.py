@@ -24,7 +24,7 @@ if __name__ == "__main__":
     try:
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(URL1)
-        sleep(5)git
+        sleep(5)
 
         bot.open_new_tab(URL2)
         sleep(5)
