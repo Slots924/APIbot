@@ -16,7 +16,7 @@ from .text_extraction import get_inner_text
 from .text_normalization import normalize_text
 from .human_pause import human_pause
 
-# Тип описує будь-яку колекцію рядків із початками коментарів.
+# Тип описує будь-яку колекцію рядків з уривками тексту коментарів.
 CommentList = Iterable[str]
 
 
@@ -25,19 +25,28 @@ def like_comments(
     comments: Optional[CommentList] = None,
     reaction: str = "like",
 ) -> bool:
-    """Ставить реакції на коментарях, що починаються з вказаних текстових префіксів."""
+    """Ставить реакції на коментарях, що містять передані текстові уривки."""
 
     print("[ACTION like_comments] 🚀 Починаю обробку коментарів.")
 
     # Нормалізуємо список переданих коментарів: фільтруємо порожні значення та
-    # приводимо рядки до нижнього регістру для стабільного префіксного порівняння.
-    comment_prefixes = [
-        normalize_text(item)
-        for item in (list(comments) if comments is not None else [])
-        if (item or "").strip()
-    ]
+    # приводимо рядки до уніфікованого вигляду для надійного пошуку за уривком.
+    comment_snippets: list[str] = []
+    for raw_item in (list(comments) if comments is not None else []):
+        # Пропускаємо порожні та пробільні значення, адже вони не несуть смислового навантаження.
+        if not (raw_item or "").strip():
+            continue
 
-    if not comment_prefixes:
+        normalized_item = normalize_text(raw_item)
+
+        # Якщо після нормалізації нічого не лишилось (наприклад, були лише емодзі),
+        # такий уривок не допоможе ідентифікувати коментар — пропускаємо його.
+        if not normalized_item:
+            continue
+
+        comment_snippets.append(normalized_item)
+
+    if not comment_snippets:
         print(
             "[ACTION like_comments] ⚠️ Не передано жодного тексту коментаря — немає кого лайкати."
         )
@@ -57,10 +66,10 @@ def like_comments(
         return False
 
     print(
-        f"[ACTION like_comments] ℹ️ Знайдено {len(containers)} видимих коментарів. Шукаю збіги за префіксами."
+        f"[ACTION like_comments] ℹ️ Знайдено {len(containers)} видимих коментарів. Шукаю збіги за уривками тексту."
     )
 
-    matched: dict[str, bool] = {prefix: False for prefix in comment_prefixes}
+    matched: dict[str, bool] = {snippet: False for snippet in comment_snippets}
 
     for idx, element in enumerate(containers, start=1):
         if all(matched.values()):
@@ -80,25 +89,25 @@ def like_comments(
         if not normalized:
             continue
 
-        target_prefix = next(
-            (prefix for prefix, done in matched.items() if not done and normalized.startswith(prefix)),
+        target_snippet = next(
+            (snippet for snippet, done in matched.items() if not done and snippet in normalized),
             None,
         )
 
-        if not target_prefix:
+        if not target_snippet:
             continue
 
         preview = raw_text.strip().replace("\n", " ")[:80]
         print(
-            f"[ACTION like_comments] [{idx}] 🎯 Збіг за префіксом. Фрагмент коментаря: '{preview}'"
+            f"[ACTION like_comments] [{idx}] 🎯 Збіг за уривком. Фрагмент коментаря: '{preview}'"
         )
 
         success = like_single_comment(driver, element, reaction)
-        matched[target_prefix] = success
+        matched[target_snippet] = success
 
         status = "успіх" if success else "помилка"
         print(
-            f"[ACTION like_comments] [{idx}] ⏱️ Завершено обробку префікса '{target_prefix[:30]}' → {status}."
+            f"[ACTION like_comments] [{idx}] ⏱️ Завершено обробку уривка '{target_snippet[:30]}' → {status}."
         )
 
         human_pause(0.3, 0.6)
