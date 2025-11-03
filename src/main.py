@@ -1,4 +1,5 @@
 # src/main.py
+from time import sleep
 
 from src.core.bot import Bot
 
@@ -14,13 +15,21 @@ if __name__ == "__main__":
         "I’m honestly shocked by their relationship dynamics. "
         "It’s wild how everything turned out!"
     )
+    URL1 = "https://www.facebook.com/photo/?fbid=1669832114466241&set=pcb.1669832301132889"
+    URL2 = "https://www.facebook.com/photo/?fbid=1443679874429048&set=pcb.1443680051095697"
+    URL3 =  "https://www.facebook.com/photo/?fbid=815878634634705&set=a.115800767975832"
 
     bot = Bot(user_id=USER_ID)
 
     try:
         bot.start()  # запуск профілю AdsPower
-        bot.human_behavior()
-        bot.comment_post(POST_URL, COMMENT_TEXT)  # тест коментаря
-        bot.human_behavior()
+        bot.open_new_tab(URL1)
+        sleep(5)git
+
+        bot.open_new_tab(URL2)
+        sleep(5)
+
+        bot.open_new_tab(URL3)
+        sleep(5)
     finally:
         bot.stop()  # обов'язково зупиняємо навіть якщо є помилки
