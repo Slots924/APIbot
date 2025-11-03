@@ -26,11 +26,9 @@ if __name__ == "__main__":
     try:
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(POST_URL)
-        # bot.comment_post(COMMENT)
-        # sleep(5)
 
-        bot.like_post()
-        sleep(5)
+        bot.like_comment(["com1"])
+        sleep(10)
 
 
 
