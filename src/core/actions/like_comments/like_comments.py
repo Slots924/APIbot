@@ -16,6 +16,7 @@ from .text_extraction import get_inner_text
 from .text_normalization import normalize_text
 from .human_pause import human_pause
 
+
 # Тип описує будь-яку колекцію рядків з уривками тексту коментарів.
 CommentList = Iterable[str]
 

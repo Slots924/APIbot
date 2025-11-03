@@ -22,10 +22,8 @@ if __name__ == "__main__":
     COMMENT = "Мальовниче місце, просто зачаровує своєю красою! І я б із задоволенням побував там, щоб відчути цю атмосферу наживо."
     COMMENTS_TO_LIKE = [
         "Tulips for the soul waves for the",
-        "So pretty",
-        "Awesome",
         "ap online work karain ge?",
-        "for the",
+
     ]
 
     bot = Bot(user_id=USER_ID)
@@ -35,7 +33,7 @@ if __name__ == "__main__":
         bot.open_new_tab(POST_URL)
 
         bot.like_comments(COMMENTS_TO_LIKE)
-        sleep(10)
+        sleep(50)
 
 
 
