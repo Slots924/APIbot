@@ -2,7 +2,9 @@
 
 from typing import Iterable, List, Optional
 
-#Імпортую функції де прописана основна логіка
+from selenium.webdriver.remote.webdriver import WebDriver
+
+# Імпортую функції де прописана основна логіка
 from .sort_comments_by_newest import sort_comments_by_newest
 
 
@@ -10,15 +12,20 @@ from .sort_comments_by_newest import sort_comments_by_newest
 CommentList = Iterable[str]
 
 
-def like_comments(comments: Optional[CommentList] = None, reaction: str = "like") -> bool:
+def like_comments(
+    driver: WebDriver,
+    comments: Optional[CommentList] = None,
+    reaction: str = "like",
+) -> bool:
     """Імітує проставлення вказаної реакції під кожним коментарем із масиву."""
 
     print(
         "[ACTION like_comments] 🚧 Запущена заглушка для реакцій на коментарях."
     )
 
-    if not sort_comments_by_newest(driver):  # якщо driver є у твоєму контексті
-        print("Не вдалося відсортувати коментарі за новими.")
+    # Спершу намагаємося відсортувати коментарі: це гарантує, що бот працюватиме з найсвіжішими.
+    if not sort_comments_by_newest(driver):
+        print("[ACTION like_comments] ❌ Не вдалося відсортувати коментарі за новими.")
         return False
 
     # Якщо масив коментарів не передали, підставляємо шаблонні значення, щоб
