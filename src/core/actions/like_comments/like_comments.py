@@ -15,7 +15,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 # Імпортуємо готову функцію сортування, яка доводить список коментарів до стану «Найновіші».
-from .like_comments_sort import sort_comments_by_newest
+from .sort_comments_by_newest import sort_comments_by_newest
 
 
 # Визначаємо підтримувані реакції. Реально імплементовано лише "like",
