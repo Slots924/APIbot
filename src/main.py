@@ -8,7 +8,7 @@ if __name__ == "__main__":
     USER_ID = "214"
 
     # Пост для тесту
-    POST_URL = "https://www.facebook.com/photo/?fbid=1354747186015660&set=a.363229598500762"
+    POST_URL = "https://www.facebook.com/photo/?fbid=1237143465128046&set=a.408871517955249"
 
     # Тестовий коментар
     COMMENT_TEXT = (
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(POST_URL)
 
-        bot.like_comments(COMMENTS_TO_LIKE)
+        bot.like_post()
         sleep(50)
 
 
