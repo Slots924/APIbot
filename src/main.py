@@ -8,7 +8,7 @@ if __name__ == "__main__":
     USER_ID = "214"
 
     # Пост для тесту
-    POST_URL = "https://www.facebook.com/photo/?fbid=1401367978211609&set=pcb.1401368171544923"
+    POST_URL = "https://www.facebook.com/photo/?fbid=1338203584618253&set=a.607112771060675"
 
     # Тестовий коментар
     COMMENT_TEXT = (
@@ -21,8 +21,7 @@ if __name__ == "__main__":
 
     COMMENT = "Мальовниче місце, просто зачаровує своєю красою! І я б із задоволенням побував там, щоб відчути цю атмосферу наживо."
     COMMENTS_TO_LIKE = [
-        "Tulips for the soul waves for the",
-        "ap online work karain ge?",
+        "frfr "
 
     ]
 
@@ -32,8 +31,9 @@ if __name__ == "__main__":
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(POST_URL)
 
-        bot.like_post("love")
-        sleep(10)
+        # bot.like_post("love")
+        bot.like_comments(COMMENTS_TO_LIKE, "like")
+        sleep(20)
 
 
 
