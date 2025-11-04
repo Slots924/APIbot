@@ -30,20 +30,15 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'respuestas')]",  # es
     ]
 
+    # Новий стабільний вираз: шукаємо кнопки з role="button", де у видимому тексті або в
+    # aria-label присутній підрядок "repl". Навіть при локалізації Facebook зберігає
+    # англомовні aria-label на кшталт "View replies", тому відмовляємося від переліку
+    # мовних варіантів і покладаємося на цю ознаку.
     replies_xpaths = [
-        # Англ: replies
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'view all') and contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'replies')]",
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'view replies')]",
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'see replies')]",
-        "//span[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'replies')]",
-        # Поширені локалі: укр/рос/фр/ісп/нім/італ/порт
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'відповід')]",   # укр: відповіді/відповідей
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'ответ')]",      # рус: ответы
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'réponses')]",   # fr
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'respuestas')]", # es
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'antworten')]",  # de
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'risposte')]",   # it
-        "//div[@role='button'][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),'respostas')]",  # pt
+        "//*[@role='button']["
+        "    contains(translate(string(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'repl')"
+        "    or contains(translate(@aria-label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'repl')"
+        "]"
     ]
 
     see_more_text_xpaths = [
@@ -62,7 +57,7 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         "see_more": 6,
     }
 
-    def _click_visible_buttons(xpaths, per_iter_limit, log_label):
+    def _click_visible_buttons(xpaths, per_iter_limit, log_label, group_name):
         clicked = 0
         for xp in xpaths:
             try:
@@ -83,6 +78,30 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                 continue
 
             for btn in visible[: max(0, per_iter_limit - clicked)]:
+                if group_name == "replies":
+                    # Для кнопок "View replies" перевіряємо додатково текст, щоб не чіпати
+                    # звичайні кнопки "Reply", які відкривають форму відповіді.
+                    try:
+                        raw_label = " ".join(
+                            part
+                            for part in [
+                                (btn.text or ""),
+                                btn.get_attribute("aria-label") or "",
+                            ]
+                            if part
+                        )
+                    except Exception:
+                        raw_label = ""
+
+                    normalized_label = raw_label.strip().lower()
+
+                    if not normalized_label:
+                        continue
+
+                    # Якщо кнопка починається зі слова "reply", це не тред з відповідями — пропускаємо.
+                    if normalized_label.startswith("reply"):
+                        continue
+
                 try:
                     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
                     human_pause(0.15, 0.3)
@@ -104,13 +123,28 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         total_clicked = 0
 
         # 1) Більше коментарів у треді
-        total_clicked += _click_visible_buttons(more_comments_xpaths, per_iter_limits["more_comments"], f"коментарі (крок {step})")
+        total_clicked += _click_visible_buttons(
+            more_comments_xpaths,
+            per_iter_limits["more_comments"],
+            f"коментарі (крок {step})",
+            "more_comments",
+        )
 
         # 2) РЕПЛАЇ (головне для твого кейсу)
-        total_clicked += _click_visible_buttons(replies_xpaths, per_iter_limits["replies"], f"реплаї (крок {step})")
+        total_clicked += _click_visible_buttons(
+            replies_xpaths,
+            per_iter_limits["replies"],
+            f"реплаї (крок {step})",
+            "replies",
+        )
 
         # 3) “See more” у довгих коментах/реплаях
-        total_clicked += _click_visible_buttons(see_more_text_xpaths, per_iter_limits["see_more"], f"довгий текст (крок {step})")
+        total_clicked += _click_visible_buttons(
+            see_more_text_xpaths,
+            per_iter_limits["see_more"],
+            f"довгий текст (крок {step})",
+            "see_more",
+        )
 
         if total_clicked == 0:
             break
