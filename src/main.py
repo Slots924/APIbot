@@ -34,27 +34,61 @@ if __name__ == "__main__":
 
     ]
 
+    user_id_array = [215,216,217,218]
 
 
-    bot = Bot(user_id=USER_ID)
+def run_for_users(user_id_array, url_1, comments_1, url_2, comments_2):
+    for user_id in user_id_array:
+        print(f"\n=== Запуск для user_id: {user_id} ===")
 
-    try:
-        bot.start()  # запуск профілю AdsPower
-        bot.open_new_tab(URL_1)
+        bot = Bot(user_id=user_id)
 
-        # bot.like_post("love")
-        bot.like_comments(COMMENTS_TO_LIKE_1, "love")
-        sleep(5)
+        try:
+            bot.start()  # запуск профілю AdsPower
+
+            bot.open_new_tab(url_1)
+            bot.like_comments(comments_1, "love")
+            bot.close_tab()
+
+            bot.open_new_tab(url_2)
+            bot.like_comments(comments_2, "love")
+            bot.close_tab()
+
+        except Exception as e:
+            print(f"[Помилка для user_id {user_id}]: {e}")
+
+        finally:
+            bot.stop()  # обов'язково зупиняємо навіть якщо є помилка
+
+
+run_for_users(user_id_array, URL_1, COMMENTS_TO_LIKE_1, URL_2, COMMENTS_TO_LIKE_2)
 
 
 
-        # bot.open_new_tab(URL2)
-        # sleep(5)
-        # bot.close_tab()
-        #
-        # bot.open_new_tab(URL3)
-        # sleep(5)
 
-        bot.close_tab()
-    finally:
-        bot.stop()  # обов'язково зупиняємо навіть якщо є помилки
+
+
+
+
+
+
+
+
+    # 
+
+    # bot = Bot(user_id=user_id)
+
+    # try:
+    #     bot.start()  # запуск профілю AdsPower
+
+    #     bot.open_new_tab(URL_1)
+    #     bot.like_comments(COMMENTS_TO_LIKE_1, "love")
+    #     bot.close_tab()
+
+
+    #     bot.open_new_tab(URL_2)
+    #     bot.like_comments(COMMENTS_TO_LIKE_2, "love")
+    #     bot.close_tab()
+        
+    # finally:
+    #     bot.stop()  # обов'язково зупиняємо навіть якщо є помилки
