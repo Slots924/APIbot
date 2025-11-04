@@ -4,6 +4,7 @@
 - Під’єднання до запущеного браузера AdsPower через debugger port
 - Вбудовані методи: like_post, comment_post
 - Підтримка екшенів із ``src/core/actions/<action>/<action>.py``
+- Метод ``like_post`` приймає бажану реакцію (`"love"`, `"care"`, тощо) і передає її у відповідний action.
 """
 
 from __future__ import annotations
@@ -145,7 +146,9 @@ class Bot:
 
     # -------------------- ACTION CALLERS --------------------
 
-    def like_post(self) -> Optional[bool]:
+    def like_post(self, reaction: str = "like") -> Optional[bool]:
+        """Встановлює реакцію на пості, делегуючи роботу однойменному action."""
+
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
@@ -154,9 +157,10 @@ class Bot:
             print("[BOT] ⚠️ like_post ще не реалізовано.")
             return None
 
-        print(f"[BOT] 👍 Лайкаю пост:")
+        print(f"[BOT] 👍 Ставлю реакцію '{reaction}' під постом:")
         try:
-            return bool(action(self.driver))
+            # Передаємо у action тип реакції, яку користувач хоче поставити під постом.
+            return bool(action(self.driver, reaction))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_post: {e}")
             traceback.print_exc()
