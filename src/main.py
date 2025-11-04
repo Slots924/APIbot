@@ -15,27 +15,36 @@ if __name__ == "__main__":
         "I’m honestly shocked by their relationship dynamics. "
         "It’s wild how everything turned out!"
     )
-    URL1 = "https://www.facebook.com/photo/?fbid=1669832114466241&set=pcb.1669832301132889"
-    URL2 = "https://www.facebook.com/photo/?fbid=1443679874429048&set=pcb.1443680051095697"
-    URL3 =  "https://www.facebook.com/photo/?fbid=815878634634705&set=a.115800767975832"
+    URL_1 = "https://www.facebook.com/photo?fbid=719057444554541&set=a.718138617979757"
+    URL_2 = "https://www.facebook.com/permalink.php?story_fbid=pfbid029YpQQP9xz3jKNsD2qJe5FfHTstKy5BRXQsRqHXCo1rMp6B9pq5XHC6bcbpAS9sp6l&id=61554826028950"
+    
 
-    COMMENT = "Мальовниче місце, просто зачаровує своєю красою! І я б із задоволенням побував там, щоб відчути цю атмосферу наживо."
-    COMMENTS_TO_LIKE = [
-        "Zenith",
-        "Punchear Yumesaki ขอหอมเหม่งได้ไหมคะ",
-        "Zenith แงงง"
+    
+    COMMENTS_TO_LIKE_1 = [
+        "Hoď sem odkaz na ten web",
+        "Tady máš: https://goodlinke.click/21",
+        "Díky, ten web je poklad. Všichni tam vědí, proč tam jsou - napíšeš, domluvíte se, uděláte co je třeba a spokojenej jedeš domů"
 
     ]
+
+    COMMENTS_TO_LIKE_2 = [
+        "Upřímně, mám trochu zvláštní fetiše v posteli",
+        "Tady máš https://goodlinke.click/Cz",
+        "Hoď sem odkaz na ten web"
+
+    ]
+
+
 
     bot = Bot(user_id=USER_ID)
 
     try:
         bot.start()  # запуск профілю AdsPower
-        bot.open_new_tab(POST_URL)
+        bot.open_new_tab(URL_1)
 
         # bot.like_post("love")
-        bot.like_comments(COMMENTS_TO_LIKE, "love")
-        sleep(30)
+        bot.like_comments(COMMENTS_TO_LIKE_1, "love")
+        sleep(5)
 
 
 

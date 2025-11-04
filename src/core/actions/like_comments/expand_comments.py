@@ -11,20 +11,17 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
     """
     Натискає кнопки:
       • “View more comments”
-      • “View 1/2/… reply/replies”, “View all/more/previous/new replies”
-      • UA: “Переглянути/Показати … відповіді/відповідей”
-      • RU: “Посмотреть/Показать … ответ/ответа/ответов”
+      • “1 reply”, “2 replies”, “View all 3 replies”, “View previous replies”
+      • UA: “Переглянути/Показати відповіді”
+      • RU: “Посмотреть/Показать ответы”
     """
 
     print("\n=== 🧩 Починаю розкриття коментарів ===")
 
-    # ---------- XPATH-и ----------
     more_comments_xpaths = [
-        # EN
         "//div[@role='button'][contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'more comments')]",
         "//span[@role='button'][contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'more comments')]",
         "//div[@role='button'][contains(.,'View') and contains(.,'more')]",
-        # UA / RU
         "//div[@role='button'][contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'коментар')]",
         "//div[@role='button'][contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'комментар')]",
     ]
@@ -33,7 +30,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
 
     per_iter_limits = {"more_comments": 4, "replies": 8}
 
-    # ---------- Локалізовані ключові слова ----------
     def _normalize_text(s: str) -> str:
         if not s:
             return ""
@@ -49,6 +45,13 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         return any(k in text for k in keys)
 
     def _looks_like_expand_replies(text_raw: str) -> bool:
+        """
+        Визначає, чи це кнопка розгортання реплаїв.
+        Дозволяє:
+          - “View 1 reply” / “View all 3 replies”
+          - “1 reply”, “2 replies”
+          - локалізовані варіанти (“1 відповідь”, “2 ответа”)
+        """
         t = _normalize_text(text_raw)
         if not t:
             return False
@@ -56,13 +59,21 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
             return False
         if not _text_has_any(t, REPLY_KEYS):
             return False
-        if not _text_has_any(t, VIEW_KEYS):
-            return False
-        if t == "reply" or t.startswith("reply "):
-            return False
-        return True
 
-    # ---------- Утіліти ----------
+        # Відсікаємо звичайну кнопку "Reply" (без цифри, без view)
+        if t.strip() in ("reply", "відповісти", "ответить"):
+            return False
+
+        # Якщо є "view" → це точно наша кнопка
+        if _text_has_any(t, VIEW_KEYS):
+            return True
+
+        # Якщо є цифра і слово reply/відпов/ответ → теж наша кнопка
+        if any(ch.isdigit() for ch in t):
+            return True
+
+        return False
+
     def element_has_size(el) -> bool:
         try:
             r = el.rect
@@ -99,7 +110,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         except Exception:
             pass
 
-    # ---------- Основні дії ----------
     def _click_more_comments(xpaths, limit):
         clicked = 0
         for xp in xpaths:
@@ -107,7 +117,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                 buttons = driver.find_elements(By.XPATH, xp)
             except Exception:
                 buttons = []
-
             for btn in buttons:
                 if clicked >= limit:
                     break
@@ -127,7 +136,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
             candidates = driver.find_elements(By.XPATH, replies_candidate_xpath)
         except Exception:
             candidates = []
-
         for el in candidates:
             if clicked >= limit:
                 break
@@ -137,7 +145,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                 txt_raw = inner_text(el)
                 if not _looks_like_expand_replies(txt_raw):
                     continue
-
                 target = el
                 try:
                     inner_span = el.find_element(By.XPATH, ".//span[@dir='auto']")
@@ -145,35 +152,23 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                         target = inner_span
                 except Exception:
                     pass
-
                 if click_element(target):
                     clicked += 1
                     wait_dom_stable(driver, timeout=5.0, stable_ms=300)
             except Exception:
                 continue
-
         return clicked
 
-    # ---------- ГОЛОВНИЙ ЦИКЛ ----------
     for step in range(1, max_clicks + 1):
         print(f"\n🔄 Ітерація #{step}")
         total_clicked = 0
-
-        total_clicked += _click_more_comments(
-            more_comments_xpaths,
-            per_iter_limits["more_comments"],
-        )
-
-        total_clicked += _click_replies(
-            per_iter_limits["replies"],
-        )
-
+        total_clicked += _click_more_comments(more_comments_xpaths, per_iter_limits["more_comments"])
+        total_clicked += _click_replies(per_iter_limits["replies"])
         if total_clicked == 0:
             scan_scroll()
             more = _click_replies(per_iter_limits["replies"])
             if more == 0:
                 break
-
         wait_dom_stable(driver, timeout=8.0, stable_ms=300)
 
     print("\n✅ Закінчив розкривати коментарі\n")
