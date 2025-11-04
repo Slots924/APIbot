@@ -32,7 +32,7 @@ if __name__ == "__main__":
         bot.start()  # запуск профілю AdsPower
         bot.open_new_tab(POST_URL)
 
-        bot.like_post()
+        bot.like_post("love")
         sleep(50)
 
 
