@@ -1,111 +1,92 @@
-"""Логіка встановлення лайка на пості Facebook."""
+"""Головна дія для встановлення реакції на пості."""
 
-import time
 from typing import Optional
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.remote.webdriver import WebDriver
+
+from .reaction_tools import check_like_state, check_reaction_state, set_reaction
 
 
-# ----------------- ХЕЛПЕРИ -----------------
+def _normalize_reaction(reaction: Optional[str]) -> str:
+    """Нормалізує назву реакції до нижнього регістру та підставляє значення за замовчуванням."""
+
+    # Для стабільності прибираємо зайві пробіли та приводимо текст до нижнього регістру.
+    normalized = (reaction or "like").strip().lower()
+    if not normalized:
+        return "like"
+    return normalized
 
 
-def _find_like_button(driver) -> Optional[WebElement]:
-    """Повертає головну кнопку лайка на основі маркера `data-ad-rendering-role`."""
+def like_post(driver: WebDriver, reaction: str = "like") -> bool:
+    """Ставить реакцію на пості або завершує роботу, якщо вона вже встановлена."""
 
-    # Використовуємо ту ж саму вибірку, що і у `quick_like2`,
-    # адже вона надійно знаходить саме потрібну кнопку без промахів по контейнерах.
-    try:
-        markers = driver.find_elements(By.CSS_SELECTOR, "[data-ad-rendering-role='like_button']")
-    except Exception:
-        return None
+    print("[ACTION like_post] 🚀 Починаю перевірку реакцій під постом.")
 
-    for marker in markers:
-        try:
-            button = marker.find_element(By.XPATH, "ancestor::div[@role='button'][1]")
-            aria = (button.get_attribute("aria-label") or "").lower()
-            if "like" in aria:
-                return button
-        except Exception:
-            # Якщо для конкретного маркера щось пішло не так — пропускаємо його.
-            continue
+    normalized_reaction = _normalize_reaction(reaction)
+    print(
+        f"[ACTION like_post] ℹ️ Запитана реакція: '{normalized_reaction}'."
+    )
 
-    return None
+    # Крок 1. Перевіряємо стан класичного лайка через окрему функцію.
+    like_state = check_like_state(driver)
+    if like_state is None:
+        print("[ACTION like_post] ⚠️ Не вдалося однозначно визначити стан лайка.")
+    else:
+        print(
+            f"[ACTION like_post] 🔍 Результат перевірки лайка: {'стоїть' if like_state else 'ще немає'}."
+        )
 
+    # Крок 2. Зчитуємо, чи проставлена будь-яка інша реакція.
+    reaction_state = check_reaction_state(driver)
+    if reaction_state:
+        print(
+            f"[ACTION like_post] 🔍 Виявлено реакцію: '{reaction_state}'."
+        )
+    else:
+        print("[ACTION like_post] 🔍 Активних реакцій не знайдено.")
 
-def _read_like_state(driver) -> Optional[bool]:
-    """Зчитує стан лайка так само, як у `quick_like2.is_liked`."""
-
-    button = _find_like_button(driver)
-    if button is None:
-        return None
-
-    try:
-        aria = (button.get_attribute("aria-label") or "").lower()
-    except Exception:
-        return None
-
-    if "remove like" in aria:
+    # Якщо лайк вже стоїть або існує будь-яка реакція — завершуємо дію.
+    if like_state:
+        print("[ACTION like_post] ✅ Лайк вже стоїть. Додаткові дії не потрібні.")
         return True
-    if "like" in aria:
-        return False
-    return None
 
-
-def _click_like_button(driver) -> bool:
-    """Викликає натискання кнопки з плавною прокруткою, як у `quick_like2.click_like`."""
-
-    button = _find_like_button(driver)
-    if button is None:
-        return False
-
-    try:
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", button)
-        time.sleep(0.3)
-        button.click()
+    if reaction_state:
+        print("[ACTION like_post] ✅ На пості вже є реакція — залишаю як є.")
         return True
-    except Exception:
-        try:
-            driver.execute_script("arguments[0].click();", button)
+
+    print(
+        f"[ACTION like_post] 👍 Жодної реакції не знайдено. Ставлю '{normalized_reaction}'."
+    )
+
+    # Пробуємо встановити реакцію один раз, згідно з вимогою не повторювати спроби.
+    if not set_reaction(driver, normalized_reaction):
+        print(
+            "[ACTION like_post] ❌ Не вдалося встановити реакцію. Завершую з помилкою."
+        )
+        return False
+
+    # Після встановлення знову перевіряємо стан для гарантії результату.
+    updated_like_state = check_like_state(driver)
+    updated_reaction_state = check_reaction_state(driver)
+
+    if normalized_reaction == "like":
+        if updated_like_state:
+            print("[ACTION like_post] ✅ Лайк успішно підтверджено після встановлення.")
             return True
-        except Exception:
-            return False
-
-
-# ----------------- ГОЛОВНА ФУНКЦІЯ -----------------
-
-
-def like_post(driver, attempts: int = 3) -> bool:
-    """Перевіряє стан лайка, за потреби ставить його та підтверджує результат."""
-
-    print("[ACTION like_post] 🚀 Починаю перевірку кнопки лайка.")
-
-    initial_state = _read_like_state(driver)
-    if initial_state is None:
-        print("[ACTION like_post] ❌ Не вдалося знайти кнопку лайка в DOM.")
-        return False
-
-    if initial_state is True:
-        print("[ACTION like_post] ⭐ Лайк вже стоїть — додаткові дії не потрібні.")
-        return True
-
-    print("[ACTION like_post] 👍 Лайка ще немає — ставлю реакцію.")
-
-    for attempt in range(1, attempts + 1):
-        if not _click_like_button(driver):
-            print(f"[ACTION like_post] ❌ Не вдалося натиснути кнопку лайка (спроба {attempt}).")
-            continue
-
-        time.sleep(1.2)
-        state_after_click = _read_like_state(driver)
-        print(f"[ACTION like_post] 🔁 Перевіряю стан після кліку: {state_after_click} (спроба {attempt}).")
-
-        if state_after_click is True:
-            print("[ACTION like_post] ✅ Лайк успішно поставлено.")
+        if updated_reaction_state == "like":
+            print(
+                "[ACTION like_post] ✅ Отримав підтвердження через стан реакції 'like'."
+            )
+            return True
+    else:
+        if updated_reaction_state == normalized_reaction:
+            print(
+                f"[ACTION like_post] ✅ Реакція '{normalized_reaction}' успішно підтверджена."
+            )
             return True
 
-        if state_after_click is None:
-            print("[ACTION like_post] ⚠️ Кнопка тимчасово недоступна, пробую ще раз.")
-
-    print("[ACTION like_post] ❌ Не вдалося підтвердити, що лайк стоїть.")
+    print(
+        "[ACTION like_post] ❌ Не вдалося підтвердити встановлену реакцію після перевірки."
+    )
     return False
+
