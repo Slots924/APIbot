@@ -8,7 +8,7 @@ if __name__ == "__main__":
     USER_ID = "214"
 
     # Пост для тесту
-    POST_URL = "https://www.facebook.com/photo/?fbid=1237143465128046&set=a.408871517955249"
+    POST_URL = "https://www.facebook.com/photo/?fbid=1401367978211609&set=pcb.1401368171544923"
 
     # Тестовий коментар
     COMMENT_TEXT = (
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         bot.open_new_tab(POST_URL)
 
         bot.like_post("love")
-        sleep(50)
+        sleep(10)
 
 
 
