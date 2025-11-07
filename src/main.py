@@ -29,18 +29,47 @@ if __name__ == "__main__":
         "Hoď sem odkaz на ten web",
     ]
 
-    # Створюємо менеджер задач, який збере в собі всі дії для повторного виконання.
-    task_manager = TaskManager(USER_ID_ARRAY)
+URL = 'https://www.facebook.com/photo/?fbid=1357982199025492&set=a.363229598500762'
+COMMENT = 'I love this is looks amathing))'
+user_id = 214
 
-    # Формуємо сценарій: відкриття першого поста, проставлення реакцій та закриття вкладки.
-    task_manager.open_new_tab(URL_1)
-    task_manager.like_comments(COMMENTS_TO_LIKE_1, "love")
-    task_manager.close_tab()
+bot = Bot(user_id=user_id)
 
-    # Повторюємо аналогічні кроки для іншого поста.
-    task_manager.open_new_tab(URL_2)
-    task_manager.like_comments(COMMENTS_TO_LIKE_2, "love")
-    task_manager.close_tab()
+try:
+    bot.start()  # запуск профілю AdsPower
 
-    # Запускаємо сценарій для кожного профілю зі списку `USER_ID_ARRAY`.
-    task_manager.run()
+    bot.close_tab()
+    bot.close_tab()
+    bot.close_tab()
+    bot.open_new_tab(URL)
+    bot.like_post()
+    bot.comment_post(COMMENT)
+    bot.close_tab()
+
+    
+
+except Exception as e:
+    print(f"[Помилка для user_id {user_id}]: {e}")
+
+finally:
+    bot.stop()  # обов'язково зупиняємо навіть якщо є помилка
+
+
+
+
+
+    # # Створюємо менеджер задач, який збере в собі всі дії для повторного виконання.
+    # task_manager = TaskManager(USER_ID_ARRAY)
+
+    # # Формуємо сценарій: відкриття першого поста, проставлення реакцій та закриття вкладки.
+    # task_manager.open_new_tab(URL_1)
+    # task_manager.like_comments(COMMENTS_TO_LIKE_1, "love")
+    # task_manager.close_tab()
+
+    # # Повторюємо аналогічні кроки для іншого поста.
+    # task_manager.open_new_tab(URL_2)
+    # task_manager.like_comments(COMMENTS_TO_LIKE_2, "love")
+    # task_manager.close_tab()
+
+    # # Запускаємо сценарій для кожного профілю зі списку `USER_ID_ARRAY`.
+    # task_manager.run()
