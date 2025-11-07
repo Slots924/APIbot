@@ -1,75 +1,44 @@
 # src/main.py
-"""Точка входу, яка демонструє використання :class:`TaskManager` для керування ботом."""
+"""Точка входу, яка демонструє пряме використання класу :class:`Bot`."""
 
-from src.task_manager import TaskManager
+# Імпортуємо головний клас бота, який інкапсулює усю взаємодію з AdsPower.
+from src.core.bot import Bot
+
 
 if __name__ == "__main__":
-    # ID профілів в AdsPower, для яких ми хочемо повторити однаковий сценарій.
-    USER_ID_ARRAY = [215, 216, 217, 218]
+    # Посилання на пост Facebook, з яким будемо взаємодіяти.
+    url = "https://www.facebook.com/photo/?fbid=1357982199025492&set=a.363229598500762"
 
-    # Посилання на пости, з якими працюватимемо.
-    URL_1 = "https://www.facebook.com/photo?fbid=719057444554541&set=a.718138617979757"
-    URL_2 = (
-        "https://www.facebook.com/permalink.php?story_fbid=pfbid029YpQQP9xz3jKNsD2qJe5FfHTstKy5BRXQsRqHXCo1rMp6B9pq5XHC6bcbpAS9sp6l&id=61554826028950"
-    )
+    # Коментар, який потрібно залишити під публікацією.
+    comment = "I love this is looks amathing))"
 
-    # Набори коментарів, яким потрібно поставити реакції.
-    COMMENTS_TO_LIKE_1 = [
-        "Hoď sem odkaz na ten web",
-        "Tady máš: https://goodlinke.click/21",
-        (
-            "Díky, ten web je poklad. Všichni tam vědí, proč tam jsou - napíšeš, domluvíte se, "
-            "uděláte co je třeba a spokojenej jedeš domů"
-        ),
-    ]
+    # Ідентифікатор профілю в AdsPower, що відповідає потрібному браузеру.
+    user_id = 214
 
-    COMMENTS_TO_LIKE_2 = [
-        "Upřímně, mám trochu zvláštní fetiše v posteli",
-        "Tady máš https://goodlinke.click/Cz",
-        "Hoď sem odkaz на ten web",
-    ]
+    # Створюємо екземпляр бота. Усі подальші дії проводитимемо через нього.
+    bot = Bot(user_id=user_id)
 
-URL = 'https://www.facebook.com/photo/?fbid=1357982199025492&set=a.363229598500762'
-COMMENT = 'I love this is looks amathing))'
-user_id = 214
+    try:
+        # 1. Запускаємо профіль AdsPower, щоб отримати доступ до браузера.
+        bot.start()
 
-bot = Bot(user_id=user_id)
+        # 2. Закриваємо зайві вкладки, що могли залишитися з попередніх сесій.
+        bot.close_tab()
+        bot.close_tab()
+        bot.close_tab()
 
-try:
-    bot.start()  # запуск профілю AdsPower
+        # 3. Відкриваємо потрібний пост, ставимо реакцію та залишаємо коментар.
+        bot.open_new_tab(url)
+        bot.like_post()
+        bot.comment_post(comment)
 
-    bot.close_tab()
-    bot.close_tab()
-    bot.close_tab()
-    bot.open_new_tab(URL)
-    bot.like_post()
-    bot.comment_post(COMMENT)
-    bot.close_tab()
+        # 4. Після виконання сценарію закриваємо вкладку, щоб не залишати сліди.
+        bot.close_tab()
 
-    
+    except Exception as exc:
+        # Фіксуємо можливу помилку, але гарантуємо завершення сесії у блоці finally.
+        print(f"[Помилка для user_id {user_id}]: {exc}")
 
-except Exception as e:
-    print(f"[Помилка для user_id {user_id}]: {e}")
-
-finally:
-    bot.stop()  # обов'язково зупиняємо навіть якщо є помилка
-
-
-
-
-
-    # # Створюємо менеджер задач, який збере в собі всі дії для повторного виконання.
-    # task_manager = TaskManager(USER_ID_ARRAY)
-
-    # # Формуємо сценарій: відкриття першого поста, проставлення реакцій та закриття вкладки.
-    # task_manager.open_new_tab(URL_1)
-    # task_manager.like_comments(COMMENTS_TO_LIKE_1, "love")
-    # task_manager.close_tab()
-
-    # # Повторюємо аналогічні кроки для іншого поста.
-    # task_manager.open_new_tab(URL_2)
-    # task_manager.like_comments(COMMENTS_TO_LIKE_2, "love")
-    # task_manager.close_tab()
-
-    # # Запускаємо сценарій для кожного профілю зі списку `USER_ID_ARRAY`.
-    # task_manager.run()
+    finally:
+        # 5. Завершуємо роботу профілю, навіть якщо сталася помилка.
+        bot.stop()
