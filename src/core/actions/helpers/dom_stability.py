@@ -8,9 +8,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from .human_pause import human_pause
 
 
-def wait_dom_stable(
-    driver: WebDriver, timeout: float = 15.0, stable_ms: int = 600
-) -> bool:
+def dom_stability(driver: WebDriver, timeout: float = 15.0, stable_ms: int = 600) -> bool:
     """Очікує, доки розмітка сторінки перестане активно змінюватися."""
 
     # Фіксуємо кінцевий момент очікування, щоб не зависнути назавжди.

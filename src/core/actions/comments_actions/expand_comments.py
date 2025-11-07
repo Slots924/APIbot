@@ -1,20 +1,13 @@
-"""Розкриття додаткових коментарів у стрічці (включно з реплаями). Підтримка EN/UA/RU."""
+"""Розкриття додаткових коментарів у стрічці (включно з реплаями)."""
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from .dom_stability import wait_dom_stable
-from .human_pause import human_pause
+from ..helpers import dom_stability, human_pause
 
 
-def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
-    """
-    Натискає кнопки:
-      • “View more comments”
-      • “1 reply”, “2 replies”, “View all 3 replies”, “View previous replies”
-      • UA: “Переглянути/Показати відповіді”
-      • RU: “Посмотреть/Показать ответы”
-    """
+def expand_comments(driver: WebDriver, max_clicks: int = 5) -> None:
+    """Скролить стрічку коментарів, доки не покаже всі елементи."""
 
     print("\n=== 🧩 Починаю розкриття коментарів ===")
 
@@ -45,13 +38,8 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         return any(k in text for k in keys)
 
     def _looks_like_expand_replies(text_raw: str) -> bool:
-        """
-        Визначає, чи це кнопка розгортання реплаїв.
-        Дозволяє:
-          - “View 1 reply” / “View all 3 replies”
-          - “1 reply”, “2 replies”
-          - локалізовані варіанти (“1 відповідь”, “2 ответа”)
-        """
+        """Визначає, чи це кнопка розгортання реплаїв."""
+
         t = _normalize_text(text_raw)
         if not t:
             return False
@@ -60,15 +48,12 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
         if not _text_has_any(t, REPLY_KEYS):
             return False
 
-        # Відсікаємо звичайну кнопку "Reply" (без цифри, без view)
         if t.strip() in ("reply", "відповісти", "ответить"):
             return False
 
-        # Якщо є "view" → це точно наша кнопка
         if _text_has_any(t, VIEW_KEYS):
             return True
 
-        # Якщо є цифра і слово reply/відпов/ответ → теж наша кнопка
         if any(ch.isdigit() for ch in t):
             return True
 
@@ -125,7 +110,7 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                         continue
                     if click_element(btn):
                         clicked += 1
-                        wait_dom_stable(driver, timeout=5.0, stable_ms=300)
+                        dom_stability(driver, timeout=5.0, stable_ms=300)
                 except Exception:
                     continue
         return clicked
@@ -154,7 +139,7 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
                     pass
                 if click_element(target):
                     clicked += 1
-                    wait_dom_stable(driver, timeout=5.0, stable_ms=300)
+                    dom_stability(driver, timeout=5.0, stable_ms=300)
             except Exception:
                 continue
         return clicked
@@ -169,6 +154,6 @@ def expand_more_comments(driver: WebDriver, max_clicks: int = 3) -> None:
             more = _click_replies(per_iter_limits["replies"])
             if more == 0:
                 break
-        wait_dom_stable(driver, timeout=8.0, stable_ms=300)
+        dom_stability(driver, timeout=8.0, stable_ms=300)
 
     print("\n✅ Закінчив розкривати коментарі\n")
