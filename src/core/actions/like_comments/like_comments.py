@@ -7,17 +7,19 @@ from typing import Iterable, Optional
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from .collect_comment_containers import collect_comment_containers
-from .dom_stability import wait_dom_stable
-from .expand_comments import expand_more_comments
-from .like_single_comment import like_single_comment
-from .sort_comments_by_newest import sort_comments_by_newest
-from .text_extraction import get_inner_text
-from .text_normalization import normalize_text
-from .human_pause import human_pause
+from ..comments_actions import (
+    collect_comments,
+    expand_comments,
+    react_on_single_comment,
+    sort_comments_by_newest,
+)
+from ..helpers import (
+    dom_stability,
+    human_pause,
+    text_extraction,
+    text_normmalization,
+)
 
-
-# Тип описує будь-яку колекцію рядків з уривками тексту коментарів.
 CommentList = Iterable[str]
 
 
@@ -30,21 +32,13 @@ def like_comments(
 
     print("[ACTION like_comments] 🚀 Починаю обробку коментарів.")
 
-    # Нормалізуємо список переданих коментарів: фільтруємо порожні значення та
-    # приводимо рядки до уніфікованого вигляду для надійного пошуку за уривком.
     comment_snippets: list[str] = []
     for raw_item in (list(comments) if comments is not None else []):
-        # Пропускаємо порожні та пробільні значення, адже вони не несуть смислового навантаження.
         if not (raw_item or "").strip():
             continue
-
-        normalized_item = normalize_text(raw_item)
-
-        # Якщо після нормалізації нічого не лишилось (наприклад, були лише емодзі),
-        # такий уривок не допоможе ідентифікувати коментар — пропускаємо його.
+        normalized_item = text_normmalization(raw_item)
         if not normalized_item:
             continue
-
         comment_snippets.append(normalized_item)
 
     if not comment_snippets:
@@ -58,10 +52,10 @@ def like_comments(
         return False
 
     human_pause(0.4, 0.7)
-    expand_more_comments(driver, max_clicks=3)
-    wait_dom_stable(driver, timeout=10.0, stable_ms=400)
+    expand_comments(driver, max_clicks=5)
+    dom_stability(driver, timeout=10.0, stable_ms=400)
 
-    containers = collect_comment_containers(driver)
+    containers = collect_comments(driver)
     if not containers:
         print("[ACTION like_comments] ❌ Не знайшов жодного контейнера коментаря.")
         return False
@@ -76,17 +70,17 @@ def like_comments(
         if all(matched.values()):
             break
 
-        wait_dom_stable(driver, timeout=6.0, stable_ms=250)
+        dom_stability(driver, timeout=6.0, stable_ms=250)
 
         try:
-            raw_text = get_inner_text(driver, element)
+            raw_text = text_extraction(driver, element)
         except StaleElementReferenceException:
             print(
                 f"[ACTION like_comments] [{idx}] ⚠️ Контейнер оновився під час читання — пропускаю."
             )
             continue
 
-        normalized = normalize_text(raw_text)
+        normalized = text_normmalization(raw_text)
         if not normalized:
             continue
 
@@ -103,7 +97,7 @@ def like_comments(
             f"[ACTION like_comments] [{idx}] 🎯 Збіг за уривком. Фрагмент коментаря: '{preview}'"
         )
 
-        success = like_single_comment(driver, element, reaction)
+        success = react_on_single_comment(driver, element, reaction)
         matched[target_snippet] = success
 
         status = "успіх" if success else "помилка"

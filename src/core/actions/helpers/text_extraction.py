@@ -1,14 +1,14 @@
-"""Отримання тексту елементів коментарів."""
+"""Утиліта для зчитування тексту з елементів інтерфейсу."""
 
 from selenium.common.exceptions import JavascriptException
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.remote.webdriver import WebDriver
 
 
-def get_inner_text(driver: WebDriver, element: WebElement) -> str:
+def text_extraction(driver: WebDriver, element: WebElement) -> str:
     """Читає текст коментаря через JavaScript з запасним варіантом Selenium."""
 
-    # Спочатку пробуємо витягти текст за допомогою JavaScript, бо він краще
+    # Спочатку пробуємо витягнути текст за допомогою JavaScript, бо він краще
     # обробляє приховані переносі рядків та вкладені теги.
     try:
         return (
