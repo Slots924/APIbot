@@ -1,8 +1,9 @@
 """Точка входу, яка демонструє пряме використання класу :class:`Bot`."""
 
-# Імпортуємо клієнт AdsPower та головний клас бота, який інкапсулює взаємодію з Selenium.
+# Імпортуємо клієнт AdsPower, головний клас бота та допоміжну функцію для отримання статі профілю.
 from src.core.ads_power import AdsPower
 from src.core.bot import Bot
+from src.core.api.get_profil_gender_by_id import get_profil_gender_by_id
 
 
 if __name__ == "__main__":
@@ -28,7 +29,7 @@ if __name__ == "__main__":
         bot.start(user_id)
 
         # 2. Отримуємо додаткову інформацію про профіль, наприклад стать.
-        sex = bot.get_profile_sex_by_id(user_id)
+        sex = get_profil_gender_by_id(ads, user_id)
         print(sex)
 
         # 3. Тут можна викликати інші методи:
