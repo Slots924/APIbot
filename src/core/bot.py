@@ -259,44 +259,4 @@ class Bot:
             traceback.print_exc()
             return False
 
-    # -------------------- Імітація людської поведінки --------------------
-
-    def human_behavior(
-        self,
-        user_id: str,
-        min_pause: float = 0.8,
-        max_pause: float = 3.0,
-    ) -> None:
-        """Виконує випадкові дії у вкладці, щоб бот виглядав природніше."""
-
-        driver = self._ensure_driver(user_id)
-
-        try:
-            actions = [
-                lambda: driver.execute_script(
-                    "window.scrollBy(0, arguments[0]);",
-                    random.randint(120, 480),
-                ),
-                lambda: driver.execute_script(
-                    "window.scrollBy(0, arguments[0]);",
-                    -random.randint(80, 300),
-                ),
-                lambda: driver.execute_script(
-                    "var e=document.createEvent('MouseEvents');"
-                    "e.initMouseEvent('mousemove', true, true, window, 0,0,0,"
-                    "arguments[0],arguments[1], false,false,false,false,0,null);"
-                    "document.dispatchEvent(e);",
-                    random.randint(50, 400),
-                    random.randint(50, 400),
-                ),
-                lambda: time.sleep(random.uniform(min_pause, max_pause)),
-            ]
-
-            for _ in range(random.randint(1, 3)):
-                random.choice(actions)()
-                time.sleep(random.uniform(0.3, 0.7))
-
-            print("[BOT] 🧍 Імітація людської активності виконана.")
-        except Exception:
-            # Якщо якась дія зламалась — замовчуємо, щоб не зривати основні сценарії.
-            pass
+    
