@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import random
 import traceback
@@ -43,6 +44,80 @@ class Bot:
         r = requests.get(f"{self._api_base}{path}", params=params, timeout=30)
         r.raise_for_status()
         return r.json()
+
+    def get_profil_info_by_id(self, user_id: str) -> Optional[dict]:
+        """Повертає інформацію про профіль AdsPower за вказаним ``user_id``."""
+
+        try:
+            # Надсилаємо запит до AdsPower API, щоб отримати інформацію саме про потрібний профіль.
+            resp = self._api_get("/api/v1/browser/list", serial_number=str(user_id))
+        except Exception as exc:
+            # Логуємо ситуацію, якщо мережевий запит зламався або сервіс тимчасово недоступний.
+            print(f"[BOT] ❌ Не вдалося отримати інформацію про профіль {user_id}: {exc}")
+            traceback.print_exc()
+            return None
+
+        # Успішна відповідь AdsPower завжди має code == 0. В інших випадках повертаємо None.
+        if resp.get("code") != 0:
+            print(
+                f"[BOT] ❌ AdsPower повернув помилку під час отримання інформації про профіль "
+                f"{user_id}: {resp}"
+            )
+            return None
+
+        data = resp.get("data")
+        # Більшість відповідей містить словник із ключем list, де перший елемент — потрібний профіль.
+        if isinstance(data, dict):
+            profiles = data.get("list")
+            if isinstance(profiles, list) and profiles:
+                return profiles[0]
+            # Якщо структура інша, повертаємо сам data, щоб не втрачати інформацію.
+            return data
+
+        print(
+            f"[BOT] ❌ Неочікуваний формат відповіді AdsPower для профілю {user_id}: {resp}"
+        )
+        return None
+
+    def get_profill_sex_by_id(self) -> Optional[str]:
+        """Повертає стать профілю (Male/Female) із додаткової інформації у полі ``name``."""
+
+        # Отримуємо JSON-інформацію про поточний профіль, використовуючи вже створений метод.
+        profile_info = self.get_profil_info_by_id(self.user_id)
+        if not profile_info:
+            print(
+                f"[BOT] ❌ Не вдалося отримати профіль {self.user_id} для визначення статі."
+            )
+            return None
+
+        name_field = profile_info.get("name")
+        if not isinstance(name_field, str) or "::" not in name_field:
+            print(
+                f"[BOT] ❌ Поле name профілю {self.user_id} не містить очікуваного роздільника '::'."
+            )
+            return None
+
+        # Рядок має формат «непотрібні дані :: {"sex": "Male"}». Забираємо JSON-частину.
+        _, json_part = name_field.split("::", 1)
+        json_part = json_part.strip()
+
+        try:
+            name_payload = json.loads(json_part)
+        except json.JSONDecodeError as exc:
+            print(
+                f"[BOT] ❌ Не вдалося розібрати JSON зі статтю профілю {self.user_id}: {exc}"
+            )
+            return None
+
+        sex = name_payload.get("sex")
+        if sex in ("Male", "Female"):
+            return sex
+
+        print(
+            f"[BOT] ❌ JSON-інформація профілю {self.user_id} не містить коректного поля 'sex': "
+            f"{name_payload}"
+        )
+        return None
 
     # -------------------- Lifecycle --------------------
 
