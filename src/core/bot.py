@@ -79,21 +79,25 @@ class Bot:
         )
         return None
 
-    def get_profill_sex_by_id(self) -> Optional[str]:
-        """Повертає стать профілю (Male/Female) із додаткової інформації у полі ``name``."""
+    def get_profile_sex_by_id(self, user_id: str) -> Optional[str]:
+        """Повертає стать профілю (``Male``/``Female``) для переданого ``user_id``."""
 
-        # Отримуємо JSON-інформацію про поточний профіль, використовуючи вже створений метод.
-        profile_info = self.get_profil_info_by_id(self.user_id)
+        # Перетворюємо вхідний ідентифікатор у рядок, щоб гарантувати коректний формат
+        # для HTTP-запиту до AdsPower.
+        normalized_user_id = str(user_id)
+
+        # Отримуємо JSON-інформацію про потрібний профіль, використовуючи вже створений метод.
+        profile_info = self.get_profil_info_by_id(normalized_user_id)
         if not profile_info:
             print(
-                f"[BOT] ❌ Не вдалося отримати профіль {self.user_id} для визначення статі."
+                f"[BOT] ❌ Не вдалося отримати профіль {normalized_user_id} для визначення статі."
             )
             return None
 
         name_field = profile_info.get("name")
         if not isinstance(name_field, str) or "::" not in name_field:
             print(
-                f"[BOT] ❌ Поле name профілю {self.user_id} не містить очікуваного роздільника '::'."
+                f"[BOT] ❌ Поле name профілю {normalized_user_id} не містить очікуваного роздільника '::'."
             )
             return None
 
@@ -105,7 +109,7 @@ class Bot:
             name_payload = json.loads(json_part)
         except json.JSONDecodeError as exc:
             print(
-                f"[BOT] ❌ Не вдалося розібрати JSON зі статтю профілю {self.user_id}: {exc}"
+                f"[BOT] ❌ Не вдалося розібрати JSON зі статтю профілю {normalized_user_id}: {exc}"
             )
             return None
 
@@ -114,7 +118,7 @@ class Bot:
             return sex
 
         print(
-            f"[BOT] ❌ JSON-інформація профілю {self.user_id} не містить коректного поля 'sex': "
+            f"[BOT] ❌ JSON-інформація профілю {normalized_user_id} не містить коректного поля 'sex': "
             f"{name_payload}"
         )
         return None
