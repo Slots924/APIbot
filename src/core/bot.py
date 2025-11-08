@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 import random
 import traceback
@@ -39,45 +38,6 @@ class Bot:
         """Делегує виклик до ``AdsPower`` для отримання інформації про профіль."""
 
         return self.ads.get_profile_info_by_id(user_id)
-
-    def get_profile_sex_by_id(self, user_id: str) -> Optional[str]:
-        """Повертає стать профілю (``Male`` або ``Female``) на основі даних AdsPower."""
-
-        normalized_user_id = str(user_id)
-        profile_info = self.get_profile_info_by_id(normalized_user_id)
-        if not profile_info:
-            print(
-                f"[BOT] ❌ Не вдалося отримати профіль {normalized_user_id} для визначення статі."
-            )
-            return None
-
-        name_field = profile_info.get("name")
-        if not isinstance(name_field, str) or "::" not in name_field:
-            print(
-                f"[BOT] ❌ Поле name профілю {normalized_user_id} не містить очікуваного роздільника '::'."
-            )
-            return None
-
-        # Рядок має формат «непотрібні дані :: {"sex": "Male"}». Забираємо JSON-частину та парсимо її.
-        _, json_part = name_field.split("::", 1)
-        json_part = json_part.strip()
-
-        try:
-            name_payload = json.loads(json_part)
-        except json.JSONDecodeError as exc:
-            print(
-                f"[BOT] ❌ Не вдалося розібрати JSON зі статтю профілю {normalized_user_id}: {exc}"
-            )
-            return None
-
-        sex = name_payload.get("sex")
-        if sex in ("Male", "Female"):
-            return sex
-
-        print(
-            f"[BOT] ❌ JSON-інформація профілю {normalized_user_id} не містить коректного поля 'sex': {name_payload}"
-        )
-        return None
 
     def _ensure_driver(self, user_id: str) -> webdriver.Chrome:
         """Переконується, що для профілю вже запущено Selenium-драйвер."""
