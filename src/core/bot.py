@@ -152,6 +152,13 @@ class Bot:
         except Exception:
             pass
 
+        try:
+            from src.core.actions.action_testing import action_testing
+
+            self._actions["action_testing"] = action_testing
+        except Exception:
+            pass
+
     # -------------------- ACTION CALLERS --------------------
 
     def like_post(self, reaction: str = "like") -> Optional[bool]:
