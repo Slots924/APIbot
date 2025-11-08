@@ -17,6 +17,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from .facebook_checkout_detect import facebook_checkout_detect
+
 # --------- Константи часу (підібрані під повільні SPA на кшталт Facebook) ---------
 PAGE_LOAD_TIMEOUT = 45            # максимальний час очікування готовності сторінки, сек
 NEW_TAB_APPEAR_TIMEOUT = 12       # таймаут очікування появи нового window handle, сек
@@ -191,8 +193,11 @@ def open_new_tab(
     else:
         print("[ACTION open_new_tab] ⚠️ Сторінка не вийшла на стабільний стан за таймаутом.")
 
+    # Незалежно від успішності стабілізації перевіряємо, чи не показує Facebook додаткових чеків.
+    facebook_checkout_detect(driver)
+
     return loaded
 
 
-__all__ = ["open_new_tab", "wait_for_full_page_ready"]
+__all__ = ["open_new_tab", "wait_for_full_page_ready", "facebook_checkout_detect"]
 
