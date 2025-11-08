@@ -30,8 +30,11 @@ def sort_comments_by_newest(driver: WebDriver) -> bool:
             break
 
     if not sort_btn:
-        print("[SORT] ❌ Кнопку сортування не знайдено.")
-        return False
+        # Якщо меню сортування відсутнє, Facebook вже показує всі коментарі у потрібному порядку.
+        print(
+            "[SORT] ℹ️ Кнопку сортування не знайдено — схоже, Facebook не показує її для малих стрічок. Продовжую без зміни порядку."
+        )
+        return True
 
     print("[SORT] ✅ Кнопка сортування знайдена.")
 
