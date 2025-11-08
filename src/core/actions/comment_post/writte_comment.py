@@ -3,47 +3,18 @@
 from __future__ import annotations
 
 import time
-from typing import Iterable
 
-from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 
 from ..comments_actions import (
     collect_comments,
     comment_human_behavire_writting,
     expand_comments,
     focus_comment_box,
+    has_same_comment,
     send_comment,
 )
-from ..helpers import dom_stability, human_pause, text_extraction, text_normmalization
-
-
-def _has_same_comment(
-    driver: WebDriver,
-    normalized_target: str,
-    containers: Iterable[WebElement] | None = None,
-) -> bool:
-    """Перевіряє, чи існує у стрічці коментар із вказаним текстом."""
-
-    if not normalized_target:
-        return False
-
-    # Перетворюємо вхідні дані на список, щоб можна було повторно проходити колекцію.
-    comment_containers = list(containers or collect_comments(driver))
-
-    for element in comment_containers:
-        # Проходимося по кожному видимому контейнеру та порівнюємо його текст із цільовим.
-        try:
-            existing_text = text_extraction(driver, element)
-        except StaleElementReferenceException:
-            continue
-
-        normalized_existing = text_normmalization(existing_text)
-        if normalized_existing == normalized_target:
-            return True
-
-    return False
+from ..helpers import dom_stability, human_pause, text_normmalization
 
 
 def writte_comment(driver: WebDriver, text: str) -> bool:
@@ -63,7 +34,12 @@ def writte_comment(driver: WebDriver, text: str) -> bool:
 
     containers = collect_comments(driver)
     # Якщо знаходимо ідентичний текст, вважаємо задачу виконаною та не дублюємо коментар.
-    if _has_same_comment(driver, normalized_target, containers):
+    _, already_exists = has_same_comment(
+        driver,
+        normalized_target,
+        containers=containers,
+    )
+    if already_exists:
         print(
             "[ACTION writte_comment] ✅ Такий коментар вже присутній на сторінці — пропускаю повторну публікацію."
         )
