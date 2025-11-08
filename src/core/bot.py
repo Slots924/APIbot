@@ -13,13 +13,20 @@ import json
 import time
 import random
 import traceback
-from typing import Callable, Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple
 
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+
+from src.core.actions.like_post.like_post import like_post
+from src.core.actions.comment_post.writte_comment import writte_comment
+from src.core.actions.comment_post.writte_replay import writte_replay
+from src.core.actions.like_comments.like_comments import like_comments
+from src.core.actions.open_new_tab.open_new_tab import open_new_tab
+from src.core.actions.close_tab.close_tab import close_tab
 
 
 class Bot:
@@ -30,9 +37,6 @@ class Bot:
 
         self.driver: Optional[webdriver.Chrome] = None
         self._started: bool = False
-
-        self._actions: dict[str, Callable] = {}
-        self._load_actions()
 
     # -------------------- Infrastructure --------------------
 
@@ -191,56 +195,6 @@ class Bot:
             pass
         self.driver = None
 
-    # -------------------- Load Actions --------------------
-
-    def _load_actions(self) -> None:
-        try:
-            from src.core.actions.like_post.like_post import like_post
-            self._actions["like_post"] = like_post
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.comment_post.writte_comment import writte_comment
-
-            self._actions["writte_comment"] = writte_comment
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.comment_post.writte_replay import writte_replay
-
-            self._actions["writte_replay"] = writte_replay
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.like_comments.like_comments import (
-                like_comments as like_comments_action,
-            )
-            self._actions["like_comments"] = like_comments_action
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.open_new_tab.open_new_tab import open_new_tab
-            self._actions["open_new_tab"] = open_new_tab
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.close_tab.close_tab import close_tab
-            self._actions["close_tab"] = close_tab
-        except Exception:
-            pass
-
-        try:
-            from src.core.actions.action_testing import action_testing
-
-            self._actions["action_testing"] = action_testing
-        except Exception:
-            pass
-
     # -------------------- ACTION CALLERS --------------------
 
     def like_post(self, reaction: str = "like") -> Optional[bool]:
@@ -249,15 +203,10 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("like_post")
-        if not action:
-            print("[BOT] ⚠️ like_post ще не реалізовано.")
-            return None
-
         print(f"[BOT] 👍 Ставлю реакцію '{reaction}' під постом:")
         try:
             # Передаємо у action тип реакції, яку користувач хоче поставити під постом.
-            return bool(action(self.driver, reaction))
+            return bool(like_post(self.driver, reaction))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_post: {e}")
             traceback.print_exc()
@@ -267,14 +216,9 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("writte_comment")
-        if not action:
-            print("[BOT] ⚠️ writte_comment ще не реалізовано.")
-            return None
-
         print(f"[BOT] 💬 Коментую пост:")
         try:
-            return bool(action(self.driver, text))
+            return bool(writte_comment(self.driver, text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в writte_comment: {e}")
             traceback.print_exc()
@@ -296,14 +240,9 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("writte_replay")
-        if not action:
-            print("[BOT] ⚠️ writte_replay ще не реалізовано.")
-            return None
-
         print("[BOT] 💬 Відповідаю на коментар у стрічці.")
         try:
-            return bool(action(self.driver, comment_snippet, reply_text))
+            return bool(writte_replay(self.driver, comment_snippet, reply_text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в writte_replay: {e}")
             traceback.print_exc()
@@ -319,15 +258,9 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        # Забираємо action із кешу `_actions`, щоб не залежати від прямого імпорту у класі Bot.
-        action = self._actions.get("like_comments")
-        if not action:
-            print("[BOT] ⚠️ like_comments ще не реалізовано.")
-            return None
-
         print("[BOT] ❤️ Ставлю реакції на коментарях.")
         try:
-            return bool(action(self.driver, comments, reaction))
+            return bool(like_comments(self.driver, comments, reaction))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_comments: {e}")
             traceback.print_exc()
@@ -343,14 +276,9 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("open_new_tab")
-        if not action:
-            print("[BOT] ⚠️ open_new_tab ще не реалізовано.")
-            return None
-
         print(f"[BOT] 🗂️ Відкриваю нову вкладку для: {url}")
         try:
-            return bool(action(self.driver, url, require_selector=require_selector))
+            return bool(open_new_tab(self.driver, url, require_selector=require_selector))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в open_new_tab: {e}")
             traceback.print_exc()
@@ -362,14 +290,9 @@ class Bot:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("close_tab")
-        if not action:
-            print("[BOT] ⚠️ close_tab ще не реалізовано.")
-            return None
-
         print(f"[BOT] ❎ Закриваю вкладки у кількості: {quantity}.")
         try:
-            return bool(action(self.driver, quantity))
+            return bool(close_tab(self.driver, quantity))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в close_tab: {e}")
             traceback.print_exc()
