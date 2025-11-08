@@ -119,8 +119,16 @@ class Bot:
             pass
 
         try:
-            from src.core.actions.comment_post.comment_post import comment_post
-            self._actions["comment_post"] = comment_post
+            from src.core.actions.comment_post.writte_comment import writte_comment
+
+            self._actions["writte_comment"] = writte_comment
+        except Exception:
+            pass
+
+        try:
+            from src.core.actions.comment_post.writte_replay import writte_replay
+
+            self._actions["writte_replay"] = writte_replay
         except Exception:
             pass
 
@@ -166,20 +174,49 @@ class Bot:
             traceback.print_exc()
             return False
 
-    def comment_post(self, text: str) -> Optional[bool]:
+    def writte_comment(self, text: str) -> Optional[bool]:
         if not self._started or not self.driver:
             raise RuntimeError("Спочатку виклич start().")
 
-        action = self._actions.get("comment_post")
+        action = self._actions.get("writte_comment")
         if not action:
-            print("[BOT] ⚠️ comment_post ще не реалізовано.")
+            print("[BOT] ⚠️ writte_comment ще не реалізовано.")
             return None
 
         print(f"[BOT] 💬 Коментую пост:")
         try:
             return bool(action(self.driver, text))
         except Exception as e:
-            print(f"[BOT] ❗ Помилка в comment_post: {e}")
+            print(f"[BOT] ❗ Помилка в writte_comment: {e}")
+            traceback.print_exc()
+            return False
+
+    def comment_post(self, text: str) -> Optional[bool]:
+        """Сумісний псевдонім для старої назви методу."""
+
+        print("[BOT] ℹ️ Метод comment_post вважається застарілим, використовую writte_comment().")
+        return self.writte_comment(text)
+
+    def writte_replay(
+        self,
+        comment_snippet: str,
+        reply_text: str,
+    ) -> Optional[bool]:
+        """Виконує action, що залишає відповідь під конкретним коментарем."""
+
+        if not self._started or not self.driver:
+            raise RuntimeError("Спочатку виклич start().")
+
+        action = self._actions.get("writte_replay")
+        if not action:
+            print("[BOT] ⚠️ writte_replay ще не реалізовано.")
+            return None
+
+        print("[BOT] 💬 Відповідаю на коментар у стрічці.")
+        try:
+            return bool(action(self.driver, comment_snippet, reply_text))
+        except Exception as e:
+            print(f"[BOT] ❗ Помилка в writte_replay: {e}")
             traceback.print_exc()
             return False
 

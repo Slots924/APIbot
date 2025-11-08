@@ -1,5 +1,6 @@
-"""Пакет з логікою публікації коментарів."""
+"""Пакет з логікою публікації коментарів та відповідей."""
 
-from .comment_post import comment_post
+from .writte_comment import writte_comment
+from .writte_replay import writte_replay
 
-__all__ = ["comment_post"]
+__all__ = ["writte_comment", "writte_replay"]
