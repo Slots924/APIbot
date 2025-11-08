@@ -24,9 +24,8 @@ if __name__ == "__main__":
     bot = Bot(user_id=user_id)
 
     try:
-        # Отримуємо стать переданого профілю, щоб мати додаткову аналітику для сценаріїв.
-        sex = bot.get_profile_sex_by_id(user_id=user_id)
-        print(f"[BOT] ℹ️ Стать профілю {user_id}: {sex}")
+      
+        bot.get_profile_sex_by_id(user_id)
 
       
 
