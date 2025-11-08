@@ -1,7 +1,7 @@
-# src/main.py
 """Точка входу, яка демонструє пряме використання класу :class:`Bot`."""
 
-# Імпортуємо головний клас бота, який інкапсулює усю взаємодію з AdsPower.
+# Імпортуємо клієнт AdsPower та головний клас бота, який інкапсулює взаємодію з Selenium.
+from src.core.ads_power import AdsPower
 from src.core.bot import Bot
 
 
@@ -13,27 +13,34 @@ if __name__ == "__main__":
     comment = "This looks insanely good — bartender level perfection"
 
     COMMENTS_TO_LIKE = [
-
         "My warmest congratulations to you! You truly deserve all the happiness and success"
     ]
 
     # Ідентифікатор профілю в AdsPower, що відповідає потрібному браузеру.
     user_id = 214
 
-    # Створюємо екземпляр бота. Усі подальші дії проводитимемо через нього.
-    bot = Bot(user_id=user_id)
+    # Створюємо екземпляри AdsPower та бота. Відтепер усі дії викликаємо з явним ``user_id``.
+    ads = AdsPower()
+    bot = Bot(ads)
 
     try:
-      
+        # 1. Запускаємо профіль перед виконанням будь-яких дій.
+        bot.start(user_id)
+
+        # 2. Отримуємо додаткову інформацію про профіль, наприклад стать.
         sex = bot.get_profile_sex_by_id(user_id)
         print(sex)
 
-      
+        # 3. Тут можна викликати інші методи:
+        # bot.open_new_tab(user_id, url)
+        # bot.like_post(user_id)
+        # bot.writte_comment(user_id, comment)
+        # bot.like_comments(user_id, COMMENTS_TO_LIKE)
 
     except Exception as exc:
         # Фіксуємо можливу помилку, але гарантуємо завершення сесії у блоці finally.
         print(f"[Помилка для user_id {user_id}]: {exc}")
 
     finally:
-        # 5. Завершуємо роботу профілю, навіть якщо сталася помилка.
-        bot.stop()
+        # Завершуємо роботу профілю незалежно від успіху попередніх кроків.
+        bot.stop(user_id)
