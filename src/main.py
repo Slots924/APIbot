@@ -18,14 +18,15 @@ if __name__ == "__main__":
     ]
 
     # Ідентифікатор профілю в AdsPower, що відповідає потрібному браузеру.
-    user_id = 137
+    user_id = 214
 
     # Створюємо екземпляр бота. Усі подальші дії проводитимемо через нього.
     bot = Bot(user_id=user_id)
 
     try:
       
-        bot.get_profile_sex_by_id(user_id)
+        sex = bot.get_profile_sex_by_id(user_id)
+        print(sex)
 
       
 
