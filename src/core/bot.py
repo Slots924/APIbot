@@ -50,7 +50,7 @@ class Bot:
 
         try:
             # Надсилаємо запит до AdsPower API, щоб отримати інформацію саме про потрібний профіль.
-            resp = self._api_get("/api/v1/browser/list", serial_number=str(user_id))
+            resp = self._api_get("/api/v1/user/list", serial_number=str(user_id))
         except Exception as exc:
             # Логуємо ситуацію, якщо мережевий запит зламався або сервіс тимчасово недоступний.
             print(f"[BOT] ❌ Не вдалося отримати інформацію про профіль {user_id}: {exc}")
@@ -69,8 +69,11 @@ class Bot:
         # Більшість відповідей містить словник із ключем list, де перший елемент — потрібний профіль.
         if isinstance(data, dict):
             profiles = data.get("list")
-            if isinstance(profiles, list) and profiles:
-                return profiles[0]
+            if isinstance(profiles, list):
+                if profiles:
+                    return profiles[0]
+                print("[BOT] ⚠️ Профіль не знайдено.")
+                return None
             # Якщо структура інша, повертаємо сам data, щоб не втрачати інформацію.
             return data
 
