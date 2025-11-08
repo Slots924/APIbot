@@ -27,7 +27,7 @@ if __name__ == "__main__":
         bot.start()
 
         bot.open_new_tab(url)
-        bot.like_comments(COMMENTS_TO_LIKE, 'love')
+        bot.writte_replay('My warmest congratulations to you!', 'I realy means it)')
 
         bot.close_tab()
 
