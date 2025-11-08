@@ -24,12 +24,9 @@ if __name__ == "__main__":
     bot = Bot(user_id=user_id)
 
     try:
-        bot.start()
+        bot.get_profille_sex_by_id(user_id)
 
-        bot.open_new_tab(url)
-        bot.writte_replay('My warmest congratulations to you!', 'I realy means it)')
-
-        bot.close_tab()
+      
 
     except Exception as exc:
         # Фіксуємо можливу помилку, але гарантуємо завершення сесії у блоці finally.
