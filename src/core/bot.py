@@ -1,11 +1,4 @@
-"""
-Спрощений Bot для AdsPower + Selenium.
-- Старт/стоп профілю по serial_number (user_id)
-- Під’єднання до запущеного браузера AdsPower через debugger port
-- Вбудовані методи: like_post, comment_post
-- Підтримка екшенів із ``src/core/actions/<action>/<action>.py``
-- Метод ``like_post`` приймає бажану реакцію (`"love"`, `"care"`, тощо) і передає її у відповідний action.
-"""
+"""Спрощений Bot для керування кількома профілями AdsPower одночасно."""
 
 from __future__ import annotations
 
@@ -13,9 +6,8 @@ import json
 import time
 import random
 import traceback
-from typing import Iterable, Optional, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
-import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -27,74 +19,32 @@ from src.core.actions.comment_post.writte_replay import writte_replay
 from src.core.actions.like_comments.like_comments import like_comments
 from src.core.actions.open_new_tab.open_new_tab import open_new_tab
 from src.core.actions.close_tab.close_tab import close_tab
+from src.core.ads_power import AdsPower
 
 
 class Bot:
-    def __init__(self, user_id: str, api_host: str = "127.0.0.1", api_port: int = 50325):
-        self.user_id = str(user_id)
-        self.api_host = api_host
-        self.api_port = int(api_port)
+    """Організує життєвий цикл Selenium-драйверів для профілів AdsPower."""
 
-        self.driver: Optional[webdriver.Chrome] = None
-        self._started: bool = False
+    def __init__(self, ads: AdsPower):
+        """Приймає попередньо налаштований клієнт :class:`AdsPower`."""
 
-    # -------------------- Infrastructure --------------------
+        # ``AdsPower`` відповідає за всі HTTP-запити до локального API.
+        self.ads = ads
+        # У цьому словнику зберігаємо Selenium-драйвер для кожного активного user_id.
+        self._drivers: Dict[str, webdriver.Chrome] = {}
 
-    @property
-    def _api_base(self) -> str:
-        return f"http://{self.api_host}:{self.api_port}"
+    # -------------------- Допоміжні методи --------------------
 
-    def _api_get(self, path: str, **params) -> dict:
-        r = requests.get(f"{self._api_base}{path}", params=params, timeout=30)
-        r.raise_for_status()
-        return r.json()
+    def get_profile_info_by_id(self, user_id: str) -> Optional[dict]:
+        """Делегує виклик до ``AdsPower`` для отримання інформації про профіль."""
 
-    def get_profil_info_by_id(self, user_id: str) -> Optional[dict]:
-        """Повертає інформацію про профіль AdsPower за вказаним ``user_id``."""
-
-        try:
-            # Надсилаємо запит до AdsPower API, щоб отримати інформацію саме про потрібний профіль.
-            resp = self._api_get("/api/v1/user/list", serial_number=str(user_id))
-        except Exception as exc:
-            # Логуємо ситуацію, якщо мережевий запит зламався або сервіс тимчасово недоступний.
-            print(f"[BOT] ❌ Не вдалося отримати інформацію про профіль {user_id}: {exc}")
-            traceback.print_exc()
-            return None
-
-        # Успішна відповідь AdsPower завжди має code == 0. В інших випадках повертаємо None.
-        if resp.get("code") != 0:
-            print(
-                f"[BOT] ❌ AdsPower повернув помилку під час отримання інформації про профіль "
-                f"{user_id}: {resp}"
-            )
-            return None
-
-        data = resp.get("data")
-        # Більшість відповідей містить словник із ключем list, де перший елемент — потрібний профіль.
-        if isinstance(data, dict):
-            profiles = data.get("list")
-            if isinstance(profiles, list):
-                if profiles:
-                    return profiles[0]
-                print("[BOT] ⚠️ Профіль не знайдено.")
-                return None
-            # Якщо структура інша, повертаємо сам data, щоб не втрачати інформацію.
-            return data
-
-        print(
-            f"[BOT] ❌ Неочікуваний формат відповіді AdsPower для профілю {user_id}: {resp}"
-        )
-        return None
+        return self.ads.get_profile_info_by_id(user_id)
 
     def get_profile_sex_by_id(self, user_id: str) -> Optional[str]:
-        """Повертає стать профілю (``Male``/``Female``) для переданого ``user_id``."""
+        """Повертає стать профілю (``Male`` або ``Female``) на основі даних AdsPower."""
 
-        # Перетворюємо вхідний ідентифікатор у рядок, щоб гарантувати коректний формат
-        # для HTTP-запиту до AdsPower.
         normalized_user_id = str(user_id)
-
-        # Отримуємо JSON-інформацію про потрібний профіль, використовуючи вже створений метод.
-        profile_info = self.get_profil_info_by_id(normalized_user_id)
+        profile_info = self.get_profile_info_by_id(normalized_user_id)
         if not profile_info:
             print(
                 f"[BOT] ❌ Не вдалося отримати профіль {normalized_user_id} для визначення статі."
@@ -108,7 +58,7 @@ class Bot:
             )
             return None
 
-        # Рядок має формат «непотрібні дані :: {"sex": "Male"}». Забираємо JSON-частину.
+        # Рядок має формат «непотрібні дані :: {"sex": "Male"}». Забираємо JSON-частину та парсимо її.
         _, json_part = name_field.split("::", 1)
         json_part = json_part.strip()
 
@@ -125,124 +75,136 @@ class Bot:
             return sex
 
         print(
-            f"[BOT] ❌ JSON-інформація профілю {normalized_user_id} не містить коректного поля 'sex': "
-            f"{name_payload}"
+            f"[BOT] ❌ JSON-інформація профілю {normalized_user_id} не містить коректного поля 'sex': {name_payload}"
         )
         return None
 
-    # -------------------- Lifecycle --------------------
+    def _ensure_driver(self, user_id: str) -> webdriver.Chrome:
+        """Переконується, що для профілю вже запущено Selenium-драйвер."""
 
-    def start(self) -> None:
-        if self._started:
-            print(f"[BOT] ⚠️ Профіль {self.user_id} вже запущено.")
+        normalized_user_id = str(user_id)
+        driver = self._drivers.get(normalized_user_id)
+        if not driver:
+            raise RuntimeError("Спочатку виклич start(user_id).")
+        return driver
+
+    # -------------------- Життєвий цикл профілю --------------------
+
+    def start(self, user_id: str) -> None:
+        """Запускає профіль AdsPower і створює прив'язаний до нього Selenium-драйвер."""
+
+        normalized_user_id = str(user_id)
+        if normalized_user_id in self._drivers:
+            print(f"[BOT] ⚠️ Профіль {normalized_user_id} вже запущено.")
             return
 
-        print(f"[BOT] ▶️ Стартую профіль {self.user_id} через AdsPower…")
+        print(f"[BOT] ▶️ Стартую профіль {normalized_user_id} через AdsPower…")
         try:
-            resp = self._api_get("/api/v1/browser/start", serial_number=self.user_id)
-            if resp.get("code") != 0:
-                raise RuntimeError(f"AdsPower не запустив профіль: {resp}")
-
-            data = resp.get("data", {}) or {}
+            # Отримуємо службову інформацію від AdsPower: порт для дебагу та шлях до chromedriver.
+            data = self.ads.start(normalized_user_id)
             debug_port = data.get("debug_port")
             chromedriver_path = data.get("webdriver")
 
             if not debug_port:
                 raise RuntimeError("debug_port не знайдено у відповіді AdsPower.")
 
+            # Налаштовуємо ChromeOptions для підключення до вже запущеного профілю.
             opts = Options()
             opts.add_experimental_option("debuggerAddress", f"127.0.0.1:{debug_port}")
             try:
                 opts.page_load_strategy = "none"
             except Exception:
+                # На старих версіях Selenium ця опція може бути недоступна — пропускаємо помилку.
                 pass
 
+            # Якщо AdsPower повернув власний chromedriver — використовуємо його.
             if chromedriver_path:
                 service = Service(chromedriver_path)
-                self.driver = webdriver.Chrome(service=service, options=opts)
+                driver = webdriver.Chrome(service=service, options=opts)
             else:
-                self.driver = webdriver.Chrome(options=opts)
+                driver = webdriver.Chrome(options=opts)
 
-            self.driver.implicitly_wait(3)
-            self._started = True
+            # Невелика неявна затримка допомагає стабілізувати роботу екшенів.
+            driver.implicitly_wait(3)
+            self._drivers[normalized_user_id] = driver
             print("[BOT] ✅ WebDriver підключено до профілю.")
 
-        except Exception as e:
-            print(f"[BOT] ❌ Помилка старту: {e}")
+        except Exception as exc:
+            # Якщо щось пішло не так — повідомляємо про це та намагаємося зупинити профіль у AdsPower.
+            print(f"[BOT] ❌ Помилка старту: {exc}")
             traceback.print_exc()
-            self._safe_close_driver()
-            self._stop_profile()
+            self.ads.stop(normalized_user_id)
             raise
 
-    def stop(self) -> None:
-        print(f"[BOT] ⏹️ Завершую сесію профілю {self.user_id}…")
-        self._safe_close_driver()
-        self._stop_profile()
-        self._started = False
+    def stop(self, user_id: str) -> None:
+        """Закриває Selenium-драйвер і надсилає запит на зупинку профілю в AdsPower."""
+
+        normalized_user_id = str(user_id)
+        print(f"[BOT] ⏹️ Завершую сесію профілю {normalized_user_id}…")
+
+        driver = self._drivers.pop(normalized_user_id, None)
+        self._safe_close_driver(driver)
+        self.ads.stop(normalized_user_id)
+
         print("[BOT] 🟢 Профіль зупинено.")
 
-    def _stop_profile(self):
+    @staticmethod
+    def _safe_close_driver(driver: Optional[webdriver.Chrome]) -> None:
+        """Акуратно закриває Selenium-драйвер, ігноруючи дрібні помилки."""
+
         try:
-            self._api_get("/api/v1/browser/stop", serial_number=self.user_id)
+            if driver:
+                driver.quit()
         except Exception:
             pass
 
-    def _safe_close_driver(self):
-        try:
-            if self.driver:
-                self.driver.quit()
-        except Exception:
-            pass
-        self.driver = None
+    # -------------------- Взаємодія з екшенами --------------------
 
-    # -------------------- ACTION CALLERS --------------------
+    def like_post(self, user_id: str, reaction: str = "like") -> Optional[bool]:
+        """Ставить реакцію на пост, використовуючи відповідний action."""
 
-    def like_post(self, reaction: str = "like") -> Optional[bool]:
-        """Встановлює реакцію на пості, делегуючи роботу однойменному action."""
-
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+        driver = self._ensure_driver(user_id)
 
         print(f"[BOT] 👍 Ставлю реакцію '{reaction}' під постом:")
         try:
-            # Передаємо у action тип реакції, яку користувач хоче поставити під постом.
-            return bool(like_post(self.driver, reaction))
+            return bool(like_post(driver, reaction))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_post: {e}")
             traceback.print_exc()
             return False
 
-    def writte_comment(self, text: str) -> Optional[bool]:
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+    def writte_comment(self, user_id: str, text: str) -> Optional[bool]:
+        """Залишає коментар під дописом через action ``writte_comment``."""
 
-        print(f"[BOT] 💬 Коментую пост:")
+        driver = self._ensure_driver(user_id)
+
+        print("[BOT] 💬 Коментую пост:")
         try:
-            return bool(writte_comment(self.driver, text))
+            return bool(writte_comment(driver, text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в writte_comment: {e}")
             traceback.print_exc()
             return False
 
-    def comment_post(self, text: str) -> Optional[bool]:
-        """Сумісний псевдонім для старої назви методу."""
+    def comment_post(self, user_id: str, text: str) -> Optional[bool]:
+        """Залишено для сумісності зі старим інтерфейсом бота."""
 
         print("[BOT] ℹ️ Метод comment_post вважається застарілим, використовую writte_comment().")
-        return self.writte_comment(text)
+        return self.writte_comment(user_id, text)
 
     def writte_replay(
         self,
+        user_id: str,
         comment_snippet: str,
         reply_text: str,
     ) -> Optional[bool]:
-        """Виконує action, що залишає відповідь під конкретним коментарем."""
+        """Відповідає на конкретний коментар під постом."""
 
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+        driver = self._ensure_driver(user_id)
 
         print("[BOT] 💬 Відповідаю на коментар у стрічці.")
         try:
-            return bool(writte_replay(self.driver, comment_snippet, reply_text))
+            return bool(writte_replay(driver, comment_snippet, reply_text))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в writte_replay: {e}")
             traceback.print_exc()
@@ -250,17 +212,17 @@ class Bot:
 
     def like_comments(
         self,
+        user_id: str,
         comments: Optional[Iterable[str]] = None,
         reaction: str = "like",
     ) -> Optional[bool]:
-        """Запускає action, який повинен поставити реакцію на заданому переліку коментарів."""
+        """Ставить реакцію на коментарях, переданих списком ``comments``."""
 
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+        driver = self._ensure_driver(user_id)
 
         print("[BOT] ❤️ Ставлю реакції на коментарях.")
         try:
-            return bool(like_comments(self.driver, comments, reaction))
+            return bool(like_comments(driver, comments, reaction))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в like_comments: {e}")
             traceback.print_exc()
@@ -268,55 +230,65 @@ class Bot:
 
     def open_new_tab(
         self,
+        user_id: str,
         url: str,
         require_selector: Optional[Tuple[By, str]] = None,
     ) -> Optional[bool]:
-        """Виконати action відкриття нової вкладки з очікуванням стабілізації DOM."""
+        """Відкриває нову вкладку та, за потреби, очікує на появу селектора ``require_selector``."""
 
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+        driver = self._ensure_driver(user_id)
 
         print(f"[BOT] 🗂️ Відкриваю нову вкладку для: {url}")
         try:
-            return bool(open_new_tab(self.driver, url, require_selector=require_selector))
+            return bool(open_new_tab(driver, url, require_selector=require_selector))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в open_new_tab: {e}")
             traceback.print_exc()
             return False
 
-    def close_tab(self, quantity: int = 1) -> Optional[bool]:
-        """Виклик екшену закриття поточної або кількох вкладок."""
+    def close_tab(self, user_id: str, quantity: int = 1) -> Optional[bool]:
+        """Закриває одну або декілька вкладок у межах активного профілю."""
 
-        if not self._started or not self.driver:
-            raise RuntimeError("Спочатку виклич start().")
+        driver = self._ensure_driver(user_id)
 
         print(f"[BOT] ❎ Закриваю вкладки у кількості: {quantity}.")
         try:
-            return bool(close_tab(self.driver, quantity))
+            return bool(close_tab(driver, quantity))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в close_tab: {e}")
             traceback.print_exc()
             return False
 
-    # -------------------- Human-like Behavior --------------------
+    # -------------------- Імітація людської поведінки --------------------
 
-    def human_behavior(self, min_pause: float = 0.8, max_pause: float = 3.0) -> None:
-        if not self._started or not self.driver:
-            print("[BOT] ℹ️ human_behavior пропущено — сесія не запущена.")
-            return
+    def human_behavior(
+        self,
+        user_id: str,
+        min_pause: float = 0.8,
+        max_pause: float = 3.0,
+    ) -> None:
+        """Виконує випадкові дії у вкладці, щоб бот виглядав природніше."""
+
+        driver = self._ensure_driver(user_id)
 
         try:
             actions = [
-                lambda: self.driver.execute_script("window.scrollBy(0, arguments[0]);",
-                                                   random.randint(120, 480)),
-                lambda: self.driver.execute_script("window.scrollBy(0, arguments[0]);",
-                                                   -random.randint(80, 300)),
-                lambda: self.driver.execute_script(
+                lambda: driver.execute_script(
+                    "window.scrollBy(0, arguments[0]);",
+                    random.randint(120, 480),
+                ),
+                lambda: driver.execute_script(
+                    "window.scrollBy(0, arguments[0]);",
+                    -random.randint(80, 300),
+                ),
+                lambda: driver.execute_script(
                     "var e=document.createEvent('MouseEvents');"
                     "e.initMouseEvent('mousemove', true, true, window, 0,0,0,"
                     "arguments[0],arguments[1], false,false,false,false,0,null);"
                     "document.dispatchEvent(e);",
-                    random.randint(50, 400), random.randint(50, 400)),
+                    random.randint(50, 400),
+                    random.randint(50, 400),
+                ),
                 lambda: time.sleep(random.uniform(min_pause, max_pause)),
             ]
 
@@ -326,4 +298,5 @@ class Bot:
 
             print("[BOT] 🧍 Імітація людської активності виконана.")
         except Exception:
+            # Якщо якась дія зламалась — замовчуємо, щоб не зривати основні сценарії.
             pass
