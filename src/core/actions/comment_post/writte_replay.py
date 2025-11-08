@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Iterable, Optional
+from typing import Optional
 
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -15,37 +15,11 @@ from ..comments_actions import (
     expand_comments,
     find_reply_button,
     focus_reply_box,
+    has_same_comment,
     press_reply_button,
     send_reply,
 )
 from ..helpers import dom_stability, human_pause, text_extraction, text_normmalization
-
-
-def _normalize_and_check_existing(
-    driver: WebDriver,
-    raw_text: str,
-    containers: Optional[Iterable[WebElement]] = None,
-) -> tuple[str, bool]:
-    """Повертає нормалізований текст і факт наявності такого коментаря."""
-
-    normalized_target = text_normmalization(raw_text)
-    if not normalized_target:
-        return "", False
-
-    # Робимо з переданого генератора повноцінний список, аби обійти його декілька разів.
-    comment_containers = list(containers or collect_comments(driver))
-
-    for element in comment_containers:
-        # Аналізуємо кожен контейнер та порівнюємо текст з нормалізованим значенням.
-        try:
-            existing_text = text_extraction(driver, element)
-        except StaleElementReferenceException:
-            continue
-
-        if text_normmalization(existing_text) == normalized_target:
-            return normalized_target, True
-
-    return normalized_target, False
 
 
 def writte_replay(
@@ -72,10 +46,10 @@ def writte_replay(
         return False
 
     # Перевіряємо, чи немає вже відповіді з таким самим текстом серед будь-яких коментарів.
-    _, already_posted = _normalize_and_check_existing(
+    _, already_posted = has_same_comment(
         driver,
         reply_text,
-        containers,
+        containers=containers,
     )
     if already_posted:
         print(

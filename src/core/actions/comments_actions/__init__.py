@@ -10,6 +10,7 @@ from .find_reply_button import find_reply_button
 from .press_reply_button import press_reply_button
 from .check_comment_exist import check_comment_exist
 from .comment_human_behavire_writting import comment_human_behavire_writting
+from .has_same_commen import has_same_comment
 from .focus_comment_box import focus_comment_box
 from .focus_reply_box import focus_reply_box
 from .send_comment import send_comment
@@ -26,6 +27,7 @@ __all__ = [
     "press_reply_button",
     "check_comment_exist",
     "comment_human_behavire_writting",
+    "has_same_comment",
     "focus_comment_box",
     "focus_reply_box",
     "send_comment",
