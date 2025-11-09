@@ -39,11 +39,6 @@ class Bot:
 
         return self.ads.get_profile_info_by_serial_number(serial_number)
 
-    def get_profile_info_by_id(self, serial_number: str) -> Optional[dict]:
-        """Залишено для зворотної сумісності зі старим API бота."""
-
-        return self.get_profile_info_by_serial_number(serial_number)
-
     def _ensure_driver(self, serial_number: str) -> webdriver.Chrome:
         """Переконується, що для профілю вже запущено Selenium-драйвер."""
 
