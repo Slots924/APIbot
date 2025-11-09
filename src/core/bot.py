@@ -5,13 +5,14 @@ from __future__ import annotations
 import time
 import random
 import traceback
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Iterable, Optional, Sequence, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
+from src.core.actions.action_testing import action_testing as action_testing_action
 from src.core.actions.like_post.like_post import like_post
 from src.core.actions.comment_post.writte_comment import writte_comment
 from src.core.actions.comment_post.writte_replay import writte_replay
@@ -216,6 +217,20 @@ class Bot:
             return bool(close_tab(driver, quantity))
         except Exception as e:
             print(f"[BOT] ❗ Помилка в close_tab: {e}")
+            traceback.print_exc()
+            return False
+
+    def action_testing(self, payload: Sequence[object]) -> bool:
+        """Запускає тестовий екшен з довільним масивом даних."""
+
+        # ``payload`` може містити будь-які об'єкти, тому використовуємо ``Sequence`` для
+        # гнучкості: користувач може передати list, tuple чи іншу послідовність.
+        # Передаємо ``AdsPower`` та масив у тестовий екшен для подальших експериментів.
+        print("[BOT] 🧪 Запускаю тестовий action_testing з переданими значеннями.")
+        try:
+            return bool(action_testing_action(self.ads, payload))
+        except Exception as e:
+            print(f"[BOT] ❗ Помилка в action_testing: {e}")
             traceback.print_exc()
             return False
 
