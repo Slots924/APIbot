@@ -39,13 +39,15 @@ class AdsPower:
         response.raise_for_status()
         return response.json()
 
-    def _build_start_payload(self, profile_id: str) -> Dict[str, Any]:
+    def _build_start_payload(self, long_user_id: str) -> Dict[str, Any]:
         """Формує JSON для запуску профілю в AdsPower API v2."""
 
-        # ``profile_id`` – основний ідентифікатор профілю, який очікує AdsPower API.
+        # ``long_user_id`` – внутрішній ідентифікатор профілю, який повертає AdsPower
+        # у полі ``user_id``. Саме його необхідно передавати в API для керування
+        # профілем, зокрема під час налаштування стартових параметрів.
         # Решту параметрів тримаємо у конфігурації ``START_PROFILE_PARAMETERS``,
         # щоб централізовано керувати поведінкою браузера під час старту.
-        payload: Dict[str, Any] = {"profile_id": profile_id}
+        payload: Dict[str, Any] = {"user_id": long_user_id}
         payload.update(START_PROFILE_PARAMETERS)
         return payload
 
@@ -54,10 +56,13 @@ class AdsPower:
 
         normalized_user_id = str(user_id)
         try:
-            # Endpoint ``/api/v1/user/list`` повертає список усіх профілів.
-            # Фільтруємо його локально, оскільки AdsPower очікує рядкове порівняння
-            # та не завжди приймає параметр ``serial_number`` в запиті.
-            response = self._api_get("/api/v1/user/list")
+            # Надсилаємо запит із параметром ``serial_number``, щоб AdsPower одразу
+            # повернув інформацію для потрібного профілю й не доводилося фільтрувати
+            # список локально. Саме так ми отримуємо ``long_user_id`` (``user_id``),
+            # який необхідний для подальших запитів.
+            response = self._api_get(
+                "/api/v1/user/list", serial_number=normalized_user_id
+            )
         except Exception as exc:
             print(
                 f"[AdsPower] ❌ Не вдалося отримати перелік профілів для серійного номера {normalized_user_id}: {exc}"
@@ -80,42 +85,44 @@ class AdsPower:
             return None
 
         for profile in profiles:
-            if not isinstance(profile, dict):
-                continue
-            if profile.get("serial_number") == normalized_user_id:
+            # API повертає список, але в успішному сценарії він містить лише один
+            # елемент з деталями профілю, який ми й віддаємо далі.
+            if isinstance(profile, dict) and profile.get("serial_number") == normalized_user_id:
                 return profile
 
-        print(f"[AdsPower] ⚠️ Профіль із серійним номером {normalized_user_id} не знайдено у списку.")
+        print(
+            f"[AdsPower] ⚠️ Профіль із серійним номером {normalized_user_id} не знайдено у відповіді AdsPower."
+        )
         return None
 
-    def _fetch_profile_id(self, user_id: str) -> Optional[str]:
-        """Повертає ``profile_id`` для переданого серійного номера користувача."""
+    def _fetch_long_user_id(self, user_id: str) -> Optional[str]:
+        """Повертає ``long_user_id`` (значення поля ``user_id``) для серійного номера."""
 
         profile = self._fetch_profile_entry(user_id)
         if profile is None:
             return None
 
-        profile_id = profile.get("user_id")
-        if profile_id is None:
+        long_user_id = profile.get("user_id")
+        if long_user_id is None:
             normalized_user_id = str(user_id)
             print(
-                f"[AdsPower] ⚠️ Для серійного номера {normalized_user_id} не знайдено profile_id у відповіді."
+                f"[AdsPower] ⚠️ Для серійного номера {normalized_user_id} не знайдено long_user_id у відповіді."
             )
             return None
 
-        return str(profile_id)
+        return str(long_user_id)
 
     def start(self, user_id: str) -> Dict[str, Any]:
         """Стартує профіль AdsPower і повертає службові дані."""
 
         normalized_user_id = str(user_id)
-        profile_id = self._fetch_profile_id(normalized_user_id)
-        if profile_id is None:
+        long_user_id = self._fetch_long_user_id(normalized_user_id)
+        if long_user_id is None:
             raise RuntimeError(
-                f"AdsPower не надав profile_id для серійного номера {normalized_user_id}."
+                f"AdsPower не надав long_user_id для серійного номера {normalized_user_id}."
             )
 
-        payload = self._build_start_payload(profile_id)
+        payload = self._build_start_payload(long_user_id)
         try:
             # AdsPower API v2 очікує POST-запит на endpoint ``/api/v2/browser-profile/start`` із JSON-тілом.
             response = self._api_post("/api/v2/browser-profile/start", payload)
