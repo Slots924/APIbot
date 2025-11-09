@@ -3,7 +3,7 @@
 # Імпортуємо клієнт AdsPower, головний клас бота та допоміжну функцію для отримання статі профілю.
 from src.core.ads_power import AdsPower
 from src.core.bot import Bot
-from src.core.api.get_profil_gender_by_id import get_profil_gender_by_id
+from src.core.api.get_profil_gender_by_serial_number import get_profil_gender_by_id
 
 
 if __name__ == "__main__":
