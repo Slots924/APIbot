@@ -164,11 +164,6 @@ class AdsPower:
 
         return profile
 
-    def get_profile_info_by_id(self, serial_number: str) -> Optional[Dict[str, Any]]:
-        """Залишено для сумісності: делегує виклик до :meth:`get_profile_info_by_serial_number`."""
-
-        return self.get_profile_info_by_serial_number(serial_number)
-
     def get_profil_gender_by_serial_number(self, serial_number: str) -> Optional[str]:
         """Повертає стать профілю AdsPower (``Male`` або ``Female``) за серійним номером."""
 
