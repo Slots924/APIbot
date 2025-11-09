@@ -39,14 +39,15 @@ class AdsPower:
         return response.json()
 
     def _build_start_payload(self, normalized_user_id: str) -> Dict[str, Any]:
-        """Готує тіло POST-запиту для старту профілю без відновлення старих вкладок."""
+        """Формує JSON для запуску профілю в AdsPower API v2."""
 
-        # Параметр ``last_opened_tabs = "0"`` наказує AdsPower не відкривати вкладки з попередньої сесії.
-        # ``profile_id`` деякі версії API очікують разом із ``serial_number``, тому дублюємо ідентифікатор.
+        # ``profile_id`` – це обов'язковий ідентифікатор профілю, який віддаємо як рядок.
+        # ``last_opened_tabs = "0"`` гарантує, що браузер не спробує відновити вкладки з попередньої сесії.
+        # ``proxy_detection = "0"`` блокує автоматичне відкриття вкладки з перевіркою IP після старту.
         return {
-            "serial_number": normalized_user_id,
             "profile_id": normalized_user_id,
             "last_opened_tabs": "0",
+            "proxy_detection": "0",
         }
 
     def start(self, user_id: str) -> Dict[str, Any]:
@@ -55,8 +56,8 @@ class AdsPower:
         normalized_user_id = str(user_id)
         payload = self._build_start_payload(normalized_user_id)
         try:
-            # Використовуємо POST, щоб перед стартом вимкнути відновлення вкладок попередньої сесії.
-            response = self._api_post("/api/v1/browser/start", payload)
+            # AdsPower API v2 очікує POST-запит на endpoint ``/api/v2/browser-profile/start`` із JSON-тілом.
+            response = self._api_post("/api/v2/browser-profile/start", payload)
         except Exception as exc:  # pragma: no cover - логування відбувається для відлагодження.
             print(
                 f"[AdsPower] ❌ Не вдалося запустити профіль {normalized_user_id}: {exc}"
@@ -65,9 +66,7 @@ class AdsPower:
             raise
 
         if response.get("code") != 0:
-            raise RuntimeError(
-                f"AdsPower повернув помилку під час старту профілю {normalized_user_id}: {response}"
-            )
+            raise RuntimeError(f"AdsPower start failed: {response}")
 
         # У разі успіху сервіс повертає словник із ключами debug_port, webdriver тощо.
         data = response.get("data") or {}
