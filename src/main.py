@@ -11,14 +11,14 @@ if __name__ == "__main__":
     url = "https://www.facebook.com/photo/?fbid=1391853225638244&set=pcb.1391853252304908"
 
     # Коментар, який потрібно залишити під публікацією.
-    comment = "This looks insanely good — bartender level perfection"
+    comment = "Also bitte, wie charmant kann ein Mann eigentlich ausschauen? 😏 Mit so einem Lächeln verdrehst du ja halb Wien den Kopf. Würd’ dich sofort auf einen Melange einladen! ☕💛"
 
     COMMENTS_TO_LIKE = [
-        "My warmest congratulations to you! You truly deserve all the happiness and success"
+        "Also bitte, wie charmant kann ein Mann eigentlich ausschauen? 😏 Mit so einem Lächeln verdrehst du ja halb Wien den Kopf. Würd’ dich sofort auf einen Melange einladen! ☕💛"
     ]
 
     # Ідентифікатор профілю в AdsPower, що відповідає потрібному браузеру.
-    user_id = 214
+    user_id = 137
 
     # Створюємо екземпляри AdsPower та бота. Відтепер усі дії викликаємо з явним ``user_id``.
     ads = AdsPower()
@@ -28,10 +28,11 @@ if __name__ == "__main__":
         # 1. Запускаємо профіль перед виконанням будь-яких дій.
         bot.start(user_id)
 
-        # 2. Отримуємо додаткову інформацію про профіль, наприклад стать.
-        sex = get_profil_gender_by_id(ads, user_id)
-        print(sex)
-
+        bot.open_new_tab(user_id,url)
+        bot.like_post(user_id)
+        bot.writte_comment(user_id, comment)
+        bot.like_comments(user_id, COMMENTS_TO_LIKE, 'love')
+        bot.close_tab(user_id)
         # 3. Тут можна викликати інші методи:
         # bot.open_new_tab(user_id, url)
         # bot.like_post(user_id)
