@@ -30,12 +30,33 @@ class AdsPower:
         response.raise_for_status()
         return response.json()
 
+    def _api_post(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Надсилає POST-запит до AdsPower та повертає JSON-відповідь."""
+
+        # Формуємо повну адресу endpoint-у та надсилаємо JSON у форматі, який очікує AdsPower API.
+        response = requests.post(f"{self._api_base}{path}", json=payload, timeout=30)
+        response.raise_for_status()
+        return response.json()
+
+    def _build_start_payload(self, normalized_user_id: str) -> Dict[str, Any]:
+        """Готує тіло POST-запиту для старту профілю без відновлення старих вкладок."""
+
+        # Параметр ``last_opened_tabs = "0"`` наказує AdsPower не відкривати вкладки з попередньої сесії.
+        # ``profile_id`` деякі версії API очікують разом із ``serial_number``, тому дублюємо ідентифікатор.
+        return {
+            "serial_number": normalized_user_id,
+            "profile_id": normalized_user_id,
+            "last_opened_tabs": "0",
+        }
+
     def start(self, user_id: str) -> Dict[str, Any]:
         """Стартує профіль AdsPower і повертає службові дані."""
 
         normalized_user_id = str(user_id)
+        payload = self._build_start_payload(normalized_user_id)
         try:
-            response = self._api_get("/api/v1/browser/start", serial_number=normalized_user_id)
+            # Використовуємо POST, щоб перед стартом вимкнути відновлення вкладок попередньої сесії.
+            response = self._api_post("/api/v1/browser/start", payload)
         except Exception as exc:  # pragma: no cover - логування відбувається для відлагодження.
             print(
                 f"[AdsPower] ❌ Не вдалося запустити профіль {normalized_user_id}: {exc}"
