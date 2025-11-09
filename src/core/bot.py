@@ -29,39 +29,44 @@ class Bot:
 
         # ``AdsPower`` відповідає за всі HTTP-запити до локального API.
         self.ads = ads
-        # У цьому словнику зберігаємо Selenium-драйвер для кожного активного user_id.
+        # У цьому словнику зберігаємо Selenium-драйвер для кожного активного серійного номера.
         self._drivers: Dict[str, webdriver.Chrome] = {}
 
     # -------------------- Допоміжні методи --------------------
 
-    def get_profile_info_by_id(self, user_id: str) -> Optional[dict]:
+    def get_profile_info_by_serial_number(self, serial_number: str) -> Optional[dict]:
         """Делегує виклик до ``AdsPower`` для отримання інформації про профіль."""
 
-        return self.ads.get_profile_info_by_id(user_id)
+        return self.ads.get_profile_info_by_serial_number(serial_number)
 
-    def _ensure_driver(self, user_id: str) -> webdriver.Chrome:
+    def get_profile_info_by_id(self, serial_number: str) -> Optional[dict]:
+        """Залишено для зворотної сумісності зі старим API бота."""
+
+        return self.get_profile_info_by_serial_number(serial_number)
+
+    def _ensure_driver(self, serial_number: str) -> webdriver.Chrome:
         """Переконується, що для профілю вже запущено Selenium-драйвер."""
 
-        normalized_user_id = str(user_id)
-        driver = self._drivers.get(normalized_user_id)
+        normalized_serial_number = str(serial_number)
+        driver = self._drivers.get(normalized_serial_number)
         if not driver:
-            raise RuntimeError("Спочатку виклич start(user_id).")
+            raise RuntimeError("Спочатку виклич start(serial_number).")
         return driver
 
     # -------------------- Життєвий цикл профілю --------------------
 
-    def start(self, user_id: str) -> None:
+    def start(self, serial_number: str) -> None:
         """Запускає профіль AdsPower і створює прив'язаний до нього Selenium-драйвер."""
 
-        normalized_user_id = str(user_id)
-        if normalized_user_id in self._drivers:
-            print(f"[BOT] ⚠️ Профіль {normalized_user_id} вже запущено.")
+        normalized_serial_number = str(serial_number)
+        if normalized_serial_number in self._drivers:
+            print(f"[BOT] ⚠️ Профіль {normalized_serial_number} вже запущено.")
             return
 
-        print(f"[BOT] ▶️ Стартую профіль {normalized_user_id} через AdsPower…")
+        print(f"[BOT] ▶️ Стартую профіль {normalized_serial_number} через AdsPower…")
         try:
             # Отримуємо службову інформацію від AdsPower: порт для дебагу та шлях до chromedriver.
-            data = self.ads.start(normalized_user_id)
+            data = self.ads.start(normalized_serial_number)
             debug_port = data.get("debug_port")
             chromedriver_path = data.get("webdriver")
 
@@ -86,25 +91,25 @@ class Bot:
 
             # Невелика неявна затримка допомагає стабілізувати роботу екшенів.
             driver.implicitly_wait(3)
-            self._drivers[normalized_user_id] = driver
+            self._drivers[normalized_serial_number] = driver
             print("[BOT] ✅ WebDriver підключено до профілю.")
 
         except Exception as exc:
             # Якщо щось пішло не так — повідомляємо про це та намагаємося зупинити профіль у AdsPower.
             print(f"[BOT] ❌ Помилка старту: {exc}")
             traceback.print_exc()
-            self.ads.stop(normalized_user_id)
+            self.ads.stop(normalized_serial_number)
             raise
 
-    def stop(self, user_id: str) -> None:
+    def stop(self, serial_number: str) -> None:
         """Закриває Selenium-драйвер і надсилає запит на зупинку профілю в AdsPower."""
 
-        normalized_user_id = str(user_id)
-        print(f"[BOT] ⏹️ Завершую сесію профілю {normalized_user_id}…")
+        normalized_serial_number = str(serial_number)
+        print(f"[BOT] ⏹️ Завершую сесію профілю {normalized_serial_number}…")
 
-        driver = self._drivers.pop(normalized_user_id, None)
+        driver = self._drivers.pop(normalized_serial_number, None)
         self._safe_close_driver(driver)
-        self.ads.stop(normalized_user_id)
+        self.ads.stop(normalized_serial_number)
 
         print("[BOT] 🟢 Профіль зупинено.")
 
@@ -120,10 +125,10 @@ class Bot:
 
     # -------------------- Взаємодія з екшенами --------------------
 
-    def like_post(self, user_id: str, reaction: str = "like") -> Optional[bool]:
+    def like_post(self, serial_number: str, reaction: str = "like") -> Optional[bool]:
         """Ставить реакцію на пост, використовуючи відповідний action."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print(f"[BOT] 👍 Ставлю реакцію '{reaction}' під постом:")
         try:
@@ -133,10 +138,10 @@ class Bot:
             traceback.print_exc()
             return False
 
-    def writte_comment(self, user_id: str, text: str) -> Optional[bool]:
+    def writte_comment(self, serial_number: str, text: str) -> Optional[bool]:
         """Залишає коментар під дописом через action ``writte_comment``."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print("[BOT] 💬 Коментую пост:")
         try:
@@ -146,21 +151,21 @@ class Bot:
             traceback.print_exc()
             return False
 
-    def comment_post(self, user_id: str, text: str) -> Optional[bool]:
+    def comment_post(self, serial_number: str, text: str) -> Optional[bool]:
         """Залишено для сумісності зі старим інтерфейсом бота."""
 
         print("[BOT] ℹ️ Метод comment_post вважається застарілим, використовую writte_comment().")
-        return self.writte_comment(user_id, text)
+        return self.writte_comment(serial_number, text)
 
     def writte_replay(
         self,
-        user_id: str,
+        serial_number: str,
         comment_snippet: str,
         reply_text: str,
     ) -> Optional[bool]:
         """Відповідає на конкретний коментар під постом."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print("[BOT] 💬 Відповідаю на коментар у стрічці.")
         try:
@@ -172,13 +177,13 @@ class Bot:
 
     def like_comments(
         self,
-        user_id: str,
+        serial_number: str,
         comments: Optional[Iterable[str]] = None,
         reaction: str = "like",
     ) -> Optional[bool]:
         """Ставить реакцію на коментарях, переданих списком ``comments``."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print("[BOT] ❤️ Ставлю реакції на коментарях.")
         try:
@@ -190,13 +195,13 @@ class Bot:
 
     def open_new_tab(
         self,
-        user_id: str,
+        serial_number: str,
         url: str,
         require_selector: Optional[Tuple[By, str]] = None,
     ) -> Optional[bool]:
         """Відкриває нову вкладку та, за потреби, очікує на появу селектора ``require_selector``."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print(f"[BOT] 🗂️ Відкриваю нову вкладку для: {url}")
         try:
@@ -206,10 +211,10 @@ class Bot:
             traceback.print_exc()
             return False
 
-    def close_tab(self, user_id: str, quantity: int = 1) -> Optional[bool]:
+    def close_tab(self, serial_number: str, quantity: int = 1) -> Optional[bool]:
         """Закриває одну або декілька вкладок у межах активного профілю."""
 
-        driver = self._ensure_driver(user_id)
+        driver = self._ensure_driver(serial_number)
 
         print(f"[BOT] ❎ Закриваю вкладки у кількості: {quantity}.")
         try:
