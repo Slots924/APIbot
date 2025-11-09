@@ -39,33 +39,33 @@ class AdsPower:
         response.raise_for_status()
         return response.json()
 
-    def _build_start_payload(self, long_user_id: str) -> Dict[str, Any]:
+    def _build_start_payload(self, ads_user_id: str) -> Dict[str, Any]:
         """Формує JSON для запуску профілю в AdsPower API v2."""
 
-        # ``long_user_id`` – внутрішній ідентифікатор профілю, який повертає AdsPower
+        # ``ads_user_id`` – внутрішній ідентифікатор профілю, який AdsPower повертає
         # у полі ``user_id``. Саме його необхідно передавати в API для керування
         # профілем, зокрема під час налаштування стартових параметрів.
         # Решту параметрів тримаємо у конфігурації ``START_PROFILE_PARAMETERS``,
         # щоб централізовано керувати поведінкою браузера під час старту.
-        payload: Dict[str, Any] = {"user_id": long_user_id}
+        payload: Dict[str, Any] = {"user_id": ads_user_id}
         payload.update(START_PROFILE_PARAMETERS)
         return payload
 
-    def _fetch_profile_entry(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def _fetch_profile_entry(self, serial_number: str) -> Optional[Dict[str, Any]]:
         """Повертає словник із даними профілю для переданого серійного номера."""
 
-        normalized_user_id = str(user_id)
+        normalized_serial_number = str(serial_number)
         try:
             # Надсилаємо запит із параметром ``serial_number``, щоб AdsPower одразу
             # повернув інформацію для потрібного профілю й не доводилося фільтрувати
-            # список локально. Саме так ми отримуємо ``long_user_id`` (``user_id``),
+            # список локально. Саме так ми отримуємо внутрішній ``user_id`` профілю,
             # який необхідний для подальших запитів.
             response = self._api_get(
-                "/api/v1/user/list", serial_number=normalized_user_id
+                "/api/v1/user/list", serial_number=normalized_serial_number
             )
         except Exception as exc:
             print(
-                f"[AdsPower] ❌ Не вдалося отримати перелік профілів для серійного номера {normalized_user_id}: {exc}"
+                f"[AdsPower] ❌ Не вдалося отримати перелік профілів для серійного номера {normalized_serial_number}: {exc}"
             )
             traceback.print_exc()
             return None
@@ -87,48 +87,51 @@ class AdsPower:
         for profile in profiles:
             # API повертає список, але в успішному сценарії він містить лише один
             # елемент з деталями профілю, який ми й віддаємо далі.
-            if isinstance(profile, dict) and profile.get("serial_number") == normalized_user_id:
+            if isinstance(profile, dict) and profile.get("serial_number") == normalized_serial_number:
                 return profile
 
         print(
-            f"[AdsPower] ⚠️ Профіль із серійним номером {normalized_user_id} не знайдено у відповіді AdsPower."
+            f"[AdsPower] ⚠️ Профіль із серійним номером {normalized_serial_number} не знайдено у відповіді AdsPower."
         )
         return None
 
-    def _fetch_long_user_id(self, user_id: str) -> Optional[str]:
-        """Повертає ``long_user_id`` (значення поля ``user_id``) для серійного номера."""
+    def _fetch_ads_user_id(self, serial_number: str) -> Optional[str]:
+        """Повертає ``user_id`` AdsPower для серійного номера профілю."""
 
-        profile = self._fetch_profile_entry(user_id)
+        profile = self._fetch_profile_entry(serial_number)
         if profile is None:
             return None
 
-        long_user_id = profile.get("user_id")
-        if long_user_id is None:
-            normalized_user_id = str(user_id)
+        ads_user_id = profile.get("user_id")
+        if ads_user_id is None:
+            normalized_serial_number = str(serial_number)
             print(
-                f"[AdsPower] ⚠️ Для серійного номера {normalized_user_id} не знайдено long_user_id у відповіді."
+                f"[AdsPower] ⚠️ Для серійного номера {normalized_serial_number} не знайдено user_id у відповіді."
             )
             return None
 
-        return str(long_user_id)
+        return str(ads_user_id)
 
-    def start(self, user_id: str) -> Dict[str, Any]:
-        """Стартує профіль AdsPower і повертає службові дані."""
+    def start(self, serial_number: str) -> Dict[str, Any]:
+        """Стартує профіль AdsPower за серійним номером і повертає службові дані."""
 
-        normalized_user_id = str(user_id)
-        long_user_id = self._fetch_long_user_id(normalized_user_id)
-        if long_user_id is None:
+        normalized_serial_number = str(serial_number)
+        # Спершу дістаємо внутрішній ``user_id`` (на кшталт ``k1646pr9``), який AdsPower
+        # зберігає у відповіді на запит за серійним номером. Саме цей ідентифікатор
+        # потрібно використовувати для налаштування стартових параметрів браузера.
+        ads_user_id = self._fetch_ads_user_id(normalized_serial_number)
+        if ads_user_id is None:
             raise RuntimeError(
-                f"AdsPower не надав long_user_id для серійного номера {normalized_user_id}."
+                f"AdsPower не надав user_id для серійного номера {normalized_serial_number}."
             )
 
-        payload = self._build_start_payload(long_user_id)
+        payload = self._build_start_payload(ads_user_id)
         try:
             # AdsPower API v2 очікує POST-запит на endpoint ``/api/v2/browser-profile/start`` із JSON-тілом.
             response = self._api_post("/api/v2/browser-profile/start", payload)
         except Exception as exc:  # pragma: no cover - логування відбувається для відлагодження.
             print(
-                f"[AdsPower] ❌ Не вдалося запустити профіль {normalized_user_id}: {exc}"
+                f"[AdsPower] ❌ Не вдалося запустити профіль {normalized_serial_number}: {exc}"
             )
             traceback.print_exc()
             raise
@@ -140,27 +143,34 @@ class AdsPower:
         data = response.get("data") or {}
         if not isinstance(data, dict):
             raise RuntimeError(
-                f"AdsPower повернув неочікувану структуру даних для профілю {normalized_user_id}: {response}"
+                f"AdsPower повернув неочікувану структуру даних для профілю {normalized_serial_number}: {response}"
             )
         return data
 
-    def stop(self, user_id: str) -> None:
-        """Коректно зупиняє профіль AdsPower."""
+    def stop(self, serial_number: str) -> None:
+        """Коректно зупиняє профіль AdsPower за серійним номером."""
 
-        normalized_user_id = str(user_id)
+        normalized_serial_number = str(serial_number)
         try:
-            self._api_get("/api/v1/browser/stop", serial_number=normalized_user_id)
+            self._api_get("/api/v1/browser/stop", serial_number=normalized_serial_number)
         except Exception as exc:  # pragma: no cover - мережеві помилки фіксуємо, але не валимо виконання.
             print(
-                f"[AdsPower] ⚠️ Не вдалося зупинити профіль {normalized_user_id}: {exc}"
+                f"[AdsPower] ⚠️ Не вдалося зупинити профіль {normalized_serial_number}: {exc}"
             )
             traceback.print_exc()
 
-    def get_profile_info_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Повертає структуру з інформацією про профіль AdsPower."""
+    def get_profile_info_by_serial_number(
+        self, serial_number: str
+    ) -> Optional[Dict[str, Any]]:
+        """Повертає структуру з інформацією про профіль AdsPower за серійним номером."""
 
-        profile = self._fetch_profile_entry(user_id)
+        profile = self._fetch_profile_entry(serial_number)
         if profile is None:
             return None
 
         return profile
+
+    def get_profile_info_by_id(self, serial_number: str) -> Optional[Dict[str, Any]]:
+        """Залишено для сумісності: делегує виклик до :meth:`get_profile_info_by_serial_number`."""
+
+        return self.get_profile_info_by_serial_number(serial_number)
