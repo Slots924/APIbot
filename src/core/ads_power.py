@@ -39,15 +39,14 @@ class AdsPower:
         response.raise_for_status()
         return response.json()
 
-    def _build_start_payload(self, profile_id: str) -> Dict[str, Any]:
+    def _build_start_payload(self, serial_number: str) -> Dict[str, Any]:
         """Формує JSON для запуску профілю в AdsPower API v2."""
 
-        # ``profile_id`` – новий ідентифікатор профілю, який тепер необхідно
-        # передавати в API для керування профілем (раніше використовувався ключ
-        # ``user_id``). Ми зберігаємо решту параметрів у конфігурації
-        # ``START_PROFILE_PARAMETERS``, щоб централізовано керувати поведінкою
-        # браузера під час старту.
-        payload: Dict[str, Any] = {"profile_id": profile_id}
+        # ``serial_number`` – зовнішній ідентифікатор профілю, який бачимо в
+        # інтерфейсі AdsPower. Відтепер саме його очікує endpoint старту, тому
+        # одразу формуємо словник з ключем ``profile_no`` і доповнюємо його
+        # параметрами з конфігурації ``START_PROFILE_PARAMETERS``.
+        payload: Dict[str, Any] = {"profile_no": serial_number}
         payload.update(START_PROFILE_PARAMETERS)
         return payload
 
@@ -116,16 +115,11 @@ class AdsPower:
         """Стартує профіль AdsPower за серійним номером і повертає службові дані."""
 
         normalized_serial_number = str(serial_number)
-        # Спершу дістаємо внутрішній ідентифікатор профілю (на кшталт ``k1646pr9``),
-        # який AdsPower повертає у відповіді на запит за серійним номером. Надалі
-        # API очікує, що ми передамо його в полі ``profile_id``.
-        profile_id = self._fetch_ads_user_id(normalized_serial_number)
-        if profile_id is None:
-            raise RuntimeError(
-                f"AdsPower не надав profile_id для серійного номера {normalized_serial_number}."
-            )
-
-        payload = self._build_start_payload(profile_id)
+        # Формуємо тіло запиту так, щоб AdsPower отримав серійний номер профілю
+        # в полі ``profile_no`` і налаштування запуску з конфігурації. Додаткові
+        # мережеві виклики більше не потрібні: старт виконується безпосередньо
+        # за серійним номером, який ми отримали від користувача.
+        payload = self._build_start_payload(normalized_serial_number)
         try:
             # AdsPower API v2 очікує POST-запит на endpoint ``/api/v2/browser-profile/start`` із JSON-тілом.
             response = self._api_post("/api/v2/browser-profile/start", payload)
