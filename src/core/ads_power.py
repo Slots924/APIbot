@@ -168,3 +168,21 @@ class AdsPower:
         """Залишено для сумісності: делегує виклик до :meth:`get_profile_info_by_serial_number`."""
 
         return self.get_profile_info_by_serial_number(serial_number)
+
+    def get_profil_gender_by_serial_number(self, serial_number: str) -> Optional[str]:
+        """Повертає стать профілю AdsPower (``Male`` або ``Female``) за серійним номером."""
+
+        # Щоб уникнути циклічних імпортів, імпортуємо допоміжну функцію локально
+        # безпосередньо всередині методу. Вона інкапсулює всю логіку визначення
+        # статі, тож тут ми лише делегуємо виклик.
+        from src.core.api.get_profil_gender_by_serial_number import (
+            get_profil_gender_by_serial_number as _fetch_gender,
+        )
+
+        # Приводимо серійний номер до рядка, оскільки AdsPower API працює саме з
+        # рядковим представленням і це прибирає можливі плутанини з числами.
+        normalized_serial_number = str(serial_number)
+
+        # Викликаємо централізовану функцію та повертаємо результат напряму, щоб
+        # зберегти єдину точку зміни логіки у випадку майбутніх доробок.
+        return _fetch_gender(self, normalized_serial_number)
