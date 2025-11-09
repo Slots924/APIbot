@@ -18,7 +18,9 @@ if __name__ == "__main__":
     ]
 
     # Серійний номер профілю в AdsPower, що відповідає потрібному браузеру.
-    serial_number = 137
+    serial_number = 233
+    serial_number_array = [214, 215, 216, 217, 218, 219]
+    path = r"C:\Users\Darkness\Documents\Projects\APIbot\src\data\comments\W1S.json"
 
     # Створюємо екземпляри AdsPower та бота. Відтепер усі дії викликаємо з явним ``serial_number``.
     ads = AdsPower()
@@ -26,13 +28,9 @@ if __name__ == "__main__":
 
     try:
         # 1. Запускаємо профіль перед виконанням будь-яких дій.
-        bot.start(serial_number)
+        bot.action_testing([serial_number_array, path])
 
-        bot.open_new_tab(serial_number, url)
-        bot.like_post(serial_number)
-        bot.writte_comment(serial_number, comment)
-        bot.like_comments(serial_number, COMMENTS_TO_LIKE, 'love')
-        bot.close_tab(serial_number)
+       
         # 3. Тут можна викликати інші методи:
         # bot.open_new_tab(serial_number, url)
         # bot.like_post(serial_number)
