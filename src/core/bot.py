@@ -207,6 +207,18 @@ class Bot:
             traceback.print_exc()
             return False
 
+    def open_tab(
+        self,
+        serial_number: str,
+        url: str,
+        require_selector: Optional[Tuple[By, str]] = None,
+    ) -> Optional[bool]:
+        """Зручна обгортка, що делегує виклик до :meth:`open_new_tab` для сумісності сценаріїв."""
+
+        # Додаткова логіка не потрібна — метод лише синхронізує назви з вимогами Flow-сценаріїв,
+        # де використовується саме ``open_tab``.
+        return self.open_new_tab(serial_number, url, require_selector)
+
     def close_tab(self, serial_number: str, quantity: int = 1) -> Optional[bool]:
         """Закриває одну або декілька вкладок у межах активного профілю."""
 
