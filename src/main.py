@@ -20,9 +20,19 @@ if __name__ == "__main__":
     ads = AdsPower()
     bot = Bot(ads)
 
+    # За потреби можна відразу визначити реакцію, яку профілі ставитимуть перед коментарем.
+    # Значення ``"none"`` вимикає встановлення реакції.
+    reaction_before_comment = "like"
+
     try:
         # Весь сценарій з обробки коментарів винесено у функцію ``writte_all_coments_to_post``.
-        writte_all_coments_to_post(bot, url, serial_number_pool, comments_path)
+        writte_all_coments_to_post(
+            bot,
+            url,
+            serial_number_pool,
+            comments_path,
+            like_post_reaction=reaction_before_comment,
+        )
     except Exception as exc:
         # Якщо сценарій згенерував помилку, логування допоможе швидко знайти причину.
         print(f"[MAIN] ❌ Сталася помилка під час виконання сценарію: {exc}")

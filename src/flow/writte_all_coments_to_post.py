@@ -111,8 +111,14 @@ def writte_all_coments_to_post(
     url: str,
     user_serial_numbers: Iterable[int | str],
     comments_json_path: str,
+    like_post_reaction: str = "none",
 ) -> None:
-    """Виконує повний цикл написання коментарів згідно з JSON-конфігом."""
+    """Виконує повний цикл написання коментарів згідно з JSON-конфігом.
+
+    Параметр ``like_post_reaction`` дозволяє задати реакцію, яку потрібно поставити перед
+    написанням коментаря. Якщо передано ``"none"`` (значення за замовчуванням), реакція не
+    встановлюється.
+    """
 
     print("[FLOW writte_all_coments] 🚀 Стартую сценарій масового публікування коментарів.")
     print(f"[FLOW writte_all_coments] 🔗 Цільовий допис: {url}")
@@ -188,6 +194,10 @@ def writte_all_coments_to_post(
     skipped_orders: List[str] = []
     failed_orders: List[Tuple[str, str]] = []
 
+    # ``like_post_reaction`` дозволяє задати реакцію, яку слід поставити перед написанням
+    # коментаря. Значення ``none`` використовується як прапорець, що реакцію не потрібно ставити.
+    normalized_reaction = (like_post_reaction or "none").strip().lower()
+
     for comment in prepared:
         # Кожен коментар обробляємо окремо, поступово зменшуючи пул доступних профілів.
         order_tuple = comment["__order_tuple"]  # type: ignore[assignment]
@@ -259,7 +269,7 @@ def writte_all_coments_to_post(
 
             # Одразу переходимо у нову вкладку з потрібним постом. Якщо сторінка не відкрилась —
             # немає сенсу продовжувати роботу з цим профілем.
-            if not bot.open_new_tab(chosen_serial, url):
+            if not bot.open_tab(chosen_serial, url):
                 print(
                     f"[FLOW writte_all_coments] ❌ Не вдалося відкрити вкладку з постом для профілю {chosen_serial}."
                 )
@@ -268,6 +278,24 @@ def writte_all_coments_to_post(
                 # Доступ до драйвера беремо через службовий метод бота. Так ми не дублюємо логіку
                 # підключення та користуємося вже відкритою сесією Selenium.
                 driver: WebDriver = bot._ensure_driver(chosen_serial)  # type: ignore[attr-defined]
+                # Невелика стабілізація DOM дозволяє переконатися, що сторінка повністю готова
+                # до наступних дій (пошуку елементів, встановлення реакції тощо).
+                dom_stability(driver, timeout=8.0, stable_ms=300)
+
+                if normalized_reaction and normalized_reaction != "none":
+                    print(
+                        f"[FLOW writte_all_coments] ❤️ Ставлю реакцію '{normalized_reaction}' перед коментуванням."
+                    )
+                    liked = bot.like_post(chosen_serial, normalized_reaction)
+                    if liked:
+                        print(
+                            "[FLOW writte_all_coments] 🟢 Реакцію під постом успішно встановлено."
+                        )
+                    else:
+                        print(
+                            "[FLOW writte_all_coments] ⚠️ Не вдалося поставити реакцію, продовжую без неї."
+                        )
+
                 containers = _ensure_comments_scanned(driver)
 
                 # Перевіряємо, чи немає на сторінці ідентичного тексту. Якщо він є —
@@ -306,6 +334,7 @@ def writte_all_coments_to_post(
                                 )
                                 posted_orders.append(order_label)
                                 remove_serial_from_pool = True
+                                dom_stability(driver, timeout=6.0, stable_ms=350)
                             else:
                                 print(
                                     f"[FLOW writte_all_coments] ❌ Не вдалося підтвердити публікацію коментаря #{order_label}."
@@ -319,6 +348,7 @@ def writte_all_coments_to_post(
                             )
                             posted_orders.append(order_label)
                             remove_serial_from_pool = True
+                            dom_stability(driver, timeout=6.0, stable_ms=350)
                         else:
                             print(
                                 f"[FLOW writte_all_coments] ❌ Не вдалося підтвердити публікацію коментаря #{order_label}."
