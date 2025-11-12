@@ -8,10 +8,10 @@ from src.flow import writte_all_coments_to_post
 
 if __name__ == "__main__":
     # Посилання на пост Facebook, з яким будемо працювати.
-    url = "https://www.facebook.com/photo/?fbid=1391853225638244&set=pcb.1391853252304908"
+    url = "https://www.facebook.com/share/p/1AXfRneTmG/"
 
     # Пул серійних номерів профілів, які можна використати для написання коментарів.
-    serial_number_pool = [214, 215, 216, 217, 218, 219]
+    serial_number_pool = [225, 231]
 
     # Шлях до JSON-файла з коментарями та необхідною статтю для кожного запису.
     comments_path = r"C:\\Users\\Darkness\\Documents\\Projects\\APIbot\\src\\data\\comments\\W1S.json"
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # За потреби можна відразу визначити реакцію, яку профілі ставитимуть перед коментарем.
     # Значення ``"none"`` вимикає встановлення реакції.
-    reaction_before_comment = "like"
+    reaction_before_comment = "love"
 
     try:
         # Весь сценарій з обробки коментарів винесено у функцію ``writte_all_coments_to_post``.
