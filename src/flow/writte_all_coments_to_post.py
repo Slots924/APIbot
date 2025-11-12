@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 import unicodedata
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -19,6 +20,12 @@ from src.core.actions.helpers.dom_stability import dom_stability
 
 # Тип для впорядкування коментарів (1, 2, 2.1 тощо).
 OrderTuple = Tuple[int, ...]
+
+
+# Налаштування обмеження швидкості запитів до AdsPower.
+_ADSPOWER_REQUEST_DELAY = 0.5
+_ADSPOWER_RATE_LIMIT_DELAY = 1.0
+_ADSPOWER_MAX_GENDER_ATTEMPTS = 3
 
 
 def _normalize_text(value: str) -> str:
@@ -75,22 +82,47 @@ def _normalize_gender(value: Optional[str]) -> str:
 
 
 def _fetch_gender(ads: AdsPower, serial_number: str) -> str:
-    """Отримує стать профілю через AdsPower та одразу нормалізує її."""
+    """Отримує стать профілю через AdsPower з урахуванням лімітів API."""
 
-    try:
-        raw_gender = ads.get_profil_gender_by_serial_number(serial_number)
-    except Exception as exc:  # pragma: no cover - мережеві помилки лише логуються.
-        print(
-            f"[FLOW writte_all_coments] ⚠️ Не вдалося отримати стать для профілю {serial_number}: {exc}"
-        )
-        return ""
+    last_raw_gender: Optional[str] = None
 
-    normalized_gender = _normalize_gender(raw_gender)
-    if not normalized_gender:
-        print(
-            f"[FLOW writte_all_coments] ⚠️ Профіль {serial_number} повернув невідому стать: {raw_gender}"
-        )
-    return normalized_gender
+    # AdsPower допускає лише кілька запитів на секунду, тому кожну спробу супроводжуємо
+    # паузою та, у разі потреби, повторюємо запит із додатковою затримкою.
+    for attempt in range(1, _ADSPOWER_MAX_GENDER_ATTEMPTS + 1):
+        try:
+            last_raw_gender = ads.get_profil_gender_by_serial_number(serial_number)
+        except Exception as exc:  # pragma: no cover - мережеві помилки лише логуються.
+            print(
+                f"[FLOW writte_all_coments] ⚠️ Не вдалося отримати стать для профілю {serial_number}: {exc}"
+            )
+            last_raw_gender = None
+
+        # Після кожного запиту робимо невелику паузу, щоб не перевищити ліміт у ~4 запити/с.
+        time.sleep(_ADSPOWER_REQUEST_DELAY)
+
+        normalized_gender = _normalize_gender(last_raw_gender)
+        if normalized_gender:
+            return normalized_gender
+
+        if last_raw_gender:
+            # Якщо відповідь є, але вона не містить валідної статі — інформуємо про це одразу.
+            print(
+                f"[FLOW writte_all_coments] ⚠️ Профіль {serial_number} повернув невідому стать: {last_raw_gender}"
+            )
+            return ""
+
+        # На цьому етапі стать не отримано — чекаємо довше та повторюємо спробу (але не більше трьох разів).
+        if attempt < _ADSPOWER_MAX_GENDER_ATTEMPTS:
+            print(
+                "[FLOW writte_all_coments] ⏳ Не вдалося визначити стать, ймовірно AdsPower обмежив запити. "
+                f"Чекаю {_ADSPOWER_RATE_LIMIT_DELAY} с та повторюю спробу {attempt + 1}/{_ADSPOWER_MAX_GENDER_ATTEMPTS}."
+            )
+            time.sleep(_ADSPOWER_RATE_LIMIT_DELAY)
+
+    print(
+        f"[FLOW writte_all_coments] ❌ Після {_ADSPOWER_MAX_GENDER_ATTEMPTS} спроб не вдалося визначити стать профілю {serial_number}."
+    )
+    return ""
 
 
 def _ensure_comments_scanned(driver: WebDriver) -> List[WebElement]:
